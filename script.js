@@ -1712,7 +1712,7 @@ function updateInteractButton(target) {
         btn.classList.remove('btn-glow');
         icon.textContent = '✨';
         title.textContent = 'เดินเที่ยวงาน';
-        sub.textContent = 'เดินไปใกล้ร้านค้า เครื่องเล่น หรือท่าน้ำ';
+        sub.textContent = 'เดินไปใกล้ร้านค้าหรือท่าน้ำ';
     }
 }
 

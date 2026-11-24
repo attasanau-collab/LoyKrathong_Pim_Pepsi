@@ -128,3 +128,45 @@ canvas {
     animation: waiShimmerSweep 3.8s infinite ease-in-out;
     pointer-events: none;
 }
+
+/* =========================================================
+   จัดระเบียบปุ่มบนหน้าจอมือถือแนวตั้ง (Portrait) ไม่ให้ซ้อนทับกัน
+   ========================================================= */
+@media (max-width: 640px) and (orientation: portrait) {
+    /* 1. แถบช่องเก็บของ 5 ช่อง อยู่ชั้นกลางเหนือจอยสติ๊กและปุ่มเดิน */
+    #inventoryWrapper {
+        bottom: 112px !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        width: max-content !important;
+        z-index: 25 !important;
+    }
+
+    /* 2. จอยสติ๊กอยู่ชิดมุมซ้ายล่าง */
+    #joystickZone {
+        width: 96px !important;
+        height: 96px !important;
+    }
+
+    /* 3. ปุ่มยกมือไหว้คู่กัน + ปุ่มปล่อยโคมลอย ยกขึ้นเหนือแถบช่องเก็บของ */
+    #btnWai,
+    #btnReleaseLantern {
+        position: fixed !important;
+        right: 12px !important;
+        z-index: 25 !important;
+    }
+
+    #btnWai {
+        bottom: 178px !important;
+    }
+
+    #btnReleaseLantern {
+        bottom: 236px !important;
+    }
+
+    /* 4. ปุ่มโต้ตอบหลัก (เดินเที่ยวงาน) อยู่มุมขวาล่าง คู่กับจอยสติ๊กซ้ายล่าง */
+    #btnInteract {
+        max-width: calc(100vw - 128px) !important;
+        padding: 10px 12px !important;
+    }
+}
