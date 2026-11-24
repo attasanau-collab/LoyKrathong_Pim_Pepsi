@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>ลอยกระทงกับเป๊ปซี่ ❤️ - งานวัดคืนวันเพ็ญ (v4)</title>
+    <title>ลอยกระทงกับเป๊ปซี่ ❤️ - งานวัดคืนวันเพ็ญ (v5)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -524,21 +524,26 @@
             <div class="flex justify-between items-start gap-2 mb-2.5">
                 <div class="text-left">
                     <h2 class="text-lg font-bold text-amber-300 font-mali">📸 ซุ้มถ่ายรูปคู่ & โปสการ์ด</h2>
-                    <p class="text-[11px] text-amber-100/80">เลือกท่าโพสน่ารักๆ แล้วกดบันทึกรูปเก็บไว้เป็นที่ระลึก</p>
+                    <p class="text-[11px] text-amber-100/80">สุ่มท่าโพสน่ารักๆ หรือเลือกเอง แล้วกดบันทึกรูปเก็บไว้</p>
                 </div>
                 <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/80 shrink-0">✕</button>
             </div>
-            <div class="bg-indigo-950/90 p-2 rounded-2xl border border-amber-300/40 mb-3 flex justify-center">
-                <canvas id="postcardCanvas" width="320" height="220" class="w-full rounded-xl shadow-lg"></canvas>
+            <div class="bg-indigo-950/90 p-2 rounded-2xl border border-amber-300/40 mb-2.5 flex justify-center relative">
+                <canvas id="postcardCanvas" width="640" height="440" class="w-full rounded-xl shadow-lg"></canvas>
             </div>
-            <div class="grid grid-cols-3 gap-1.5 mb-3">
-                <button onclick="setPhotoPose('heart')" id="pose-heart" class="glass-card rounded-xl py-2 px-1 text-[11px] font-semibold border-amber-300 bg-amber-400/20">🫶 มินิฮาร์ท</button>
+            <div class="grid grid-cols-3 gap-1.5 mb-2.5">
+                <button onclick="setPhotoPose('heart')" id="pose-heart" class="glass-card rounded-xl py-2 px-1 text-[11px] font-semibold border-amber-300 bg-amber-400/20">🫶 ทำท่าหัวใจ</button>
                 <button onclick="setPhotoPose('peace')" id="pose-peace" class="glass-card rounded-xl py-2 px-1 text-[11px] font-semibold">✌️ ชูสองนิ้ว</button>
                 <button onclick="setPhotoPose('krathong')" id="pose-krathong" class="glass-card rounded-xl py-2 px-1 text-[11px] font-semibold">🪷 ถือกระทงคู่</button>
             </div>
-            <button onclick="downloadPostcardImage()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white font-bold text-sm shadow-xl active:scale-95 transition btn-glow">
-                บันทึกรูปโปสการ์ดเก็บไว้ในเครื่อง 📥❤️
-            </button>
+            <div class="grid grid-cols-5 gap-1.5">
+                <button onclick="randomizePhotoPose()" class="col-span-2 py-3 rounded-2xl bg-white/15 hover:bg-white/25 border border-amber-300/45 text-amber-200 font-bold text-xs shadow active:scale-95 transition">
+                    🎲 สุ่มท่าโพส
+                </button>
+                <button onclick="downloadPostcardImage()" class="col-span-3 py-3 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white font-bold text-xs shadow-xl active:scale-95 transition btn-glow">
+                    บันทึกภาพ (Save PNG) 📥
+                </button>
+            </div>
         </div>
 
         <!-- 13. จดหมายลับจากเป๊ปซี่ -->
@@ -555,8 +560,29 @@
             </div>
             <div id="secretLetterUnlockedView" class="hidden py-2 text-left">
                 <div class="text-center text-4xl mb-2 animate-bounce">💖✨</div>
-                <h3 class="text-center text-lg font-bold text-amber-300 font-mali mb-3">ถึง พิม คนพิเศษของเป๊ปซี่</h3>
-                <div class="bg-white/10 rounded-2xl p-4 border border-amber-300/35 text-xs text-white leading-relaxed font-mali whitespace-pre-line" id="secretLetterBodyText"></div>
+                <div class="flex items-center justify-between gap-2 mb-2.5">
+                    <h3 class="text-base font-bold text-amber-300 font-mali">ถึง พิม คนพิเศษของเป๊ปซี่</h3>
+                    <button id="btnToggleEditLetter" onclick="toggleEditSecretLetter()" class="px-2.5 py-1 rounded-xl bg-white/15 hover:bg-white/25 border border-amber-300/40 text-[11px] text-amber-200 font-semibold shrink-0 active:scale-95 transition">
+                        ✏️ แก้ไขข้อความ
+                    </button>
+                </div>
+
+                <!-- โหมดอ่านจดหมาย -->
+                <div id="secretLetterReadMode" class="bg-white/10 rounded-2xl p-4 border border-amber-300/35 text-xs text-white leading-relaxed font-mali whitespace-pre-line"></div>
+
+                <!-- โหมดแก้ไขข้อความจากใจจริง -->
+                <div id="secretLetterEditMode" class="hidden space-y-2.5">
+                    <textarea id="secretLetterEditorInput" rows="7" placeholder="พิมพ์ข้อความยาวๆ จากใจจริงถึงพิมตรงนี้ได้เลย..." class="w-full rounded-2xl bg-black/35 border border-amber-300/60 p-3 text-white placeholder-white/40 text-xs leading-relaxed font-mali focus:outline-none focus:border-amber-300"></textarea>
+                    <div class="flex gap-2">
+                        <button onclick="resetSecretLetterDefault()" class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-[11px] text-white/80 font-semibold">
+                            คืนค่าเดิม
+                        </button>
+                        <button onclick="saveCustomSecretLetter()" class="flex-1 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold shadow active:scale-95 transition">
+                            💾 บันทึกข้อความจดหมาย
+                        </button>
+                    </div>
+                </div>
+
                 <button onclick="closeAllModals(); triggerCelebrationFireworks();" class="mt-4 w-full py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-bold text-sm shadow-lg active:scale-95 transition btn-glow">
                     เก็บไว้ในใจ ❤️ (จุดพลุฉลอง)
                 </button>
