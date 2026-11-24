@@ -1,6 +1,18 @@
 // =========================================================
-// script.js - ระบบเกม 2D งานวัดลอยกระทง (พิม & เป๊ปซี่)
+// script.js - เกม 2D งานวัดลอยกระทง (พิม & เป๊ปซี่) เวอร์ชัน v4
 // =========================================================
+
+// 💌 แก้ไขข้อความจดหมายลับจากเป๊ปซี่ถึงพิมตรงนี้ได้เลยครับ:
+const SECRET_LOVE_LETTER = `สุขสันต์วันลอยกระทงนะพิม ❤️
+
+ขอบคุณที่เดินเล่น ปล่อยโคม ทำบุญ และลอยกระทงข้างๆ เป๊ปซี่ในคืนนี้นะ
+ไม่ว่าจะเป็นคืนวันเพ็ญปีนี้ หรืออีกกี่ปีข้างหน้า
+เป๊ปซี่ก็อยากจับมือพิมเดินเที่ยวงานวัดแบบนี้ไปเรื่อยๆ เลย
+
+ขอให้พิมมีแต่รอยยิ้ม มีความสุขในทุกๆ วัน
+รักพิมที่สุดในโลกเลยครับ 💕
+
+— จาก เป๊ปซี่`;
 
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
@@ -17,10 +29,13 @@ let audioCtx = null;
 let musicInterval = null;
 let currentSongIndex = 0;
 
-// =========================================================
-// รายการเพลงพื้นหลัง 3 เพลง (ใส่ไฟล์เพลงของคุณไว้ในโฟลเดอร์ sounds/)
-// สามารถแก้ไขชื่อเพลง (title) และชื่อไฟล์ (fileSrc: 'sounds/ชื่อไฟล์.mp3') ตรงนี้ได้เลยครับ
-// =========================================================
+// สถานะความคืบหน้าภารกิจเพื่อปลดล็อกจดหมายลับ
+const questProgress = {
+    templeOrFortune: false,
+    releasedLantern: false,
+    floatedKrathong: false
+};
+
 const playlist = [
     {
         id: 0,
@@ -57,31 +72,20 @@ const camera = { x: 650, y: 300, zoom: 1 };
 function computeOptimalCameraZoom() {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    // มือถือแนวตั้ง: ซูมเข้ากำลังดีให้อ่านป้ายชื่อร้านและข้อความพูดคุยบนหัวตัวละครได้ชัดเจน
-    if (w < 640 && h > w) {
-        return Math.max(0.76, Math.min(0.90, w / 465));
-    }
-    // มือถือแนวนอน
-    if (h < 540 && w > h) {
-        return Math.max(0.74, Math.min(0.86, h / 460));
-    }
-    // แท็บเล็ตขนาดกลาง
-    if (w < 1024) {
-        return 0.92;
-    }
-    // คอมพิวเตอร์ / จอใหญ่
+    if (w < 640 && h > w) return Math.max(0.76, Math.min(0.90, w / 465));
+    if (h < 540 && w > h) return Math.max(0.74, Math.min(0.86, h / 460));
+    if (w < 1024) return 0.92;
     return 1.05;
 }
 
-// สถานะการนั่งเครื่องเล่นของพิมและเป๊ปซี่
 const rideState = {
     active: false,
-    type: null, // 'ferris' หรือ 'carousel'
+    type: null,
     timer: 0,
     angle: 0
 };
 
-// ตัวละครหลัก: พิม (ผู้เล่น) + ช่องเก็บของ 5 ช่อง
+// ตัวละครหลัก: พิม + โหมดจูงมือเดิน
 const pim = {
     x: 920,
     y: 580,
@@ -90,6 +94,7 @@ const pim = {
     speed: 235,
     walkCycle: 0,
     facing: 1,
+    holdingHands: false,
     inventory: [null, null, null, null, null],
     selectedSlot: 0,
     get heldItem() {
@@ -108,7 +113,6 @@ const pim = {
             this.inventory[emptyIdx] = item;
             this.selectedSlot = emptyIdx;
         } else {
-            // ถ้าเต็มทั้ง 5 ช่อง ให้แทนที่ช่องที่กำลังเลือกอยู่
             this.inventory[this.selectedSlot] = item;
         }
     },
@@ -118,7 +122,6 @@ const pim = {
     prayTimer: 0
 };
 
-// ตัวละครคู่รัก: เป๊ปซี่ (AI เดินตามพิมอัตโนมัติ)
 const pepsi = {
     x: 865,
     y: 590,
@@ -135,39 +138,50 @@ const pepsi = {
 
 const pepsiSweetPhrases = [
     'เดินดีๆ นะพิม คนเยอะเดี๋ยวหลง ❤️',
+    'กดปุ่ม "จูงมือ" เดินจับมือกันไหมพิม? 🤝',
+    'แวะซุ้มเซียมซีคู่รักเสี่ยงทายดวงกันไหม? 🎋',
+    'ไปถ่ายรูปคู่เก็บโปสการ์ดไว้เป็นที่ระลึกกันเถอะ 📸',
     'แวะร้านขายโคมไฟซื้อโคมมาปล่อยคู่กันไหมพิม? 🏮',
     'อยู่ข้างๆ พิมแบบนี้มีความสุขที่สุดเลย 😊',
-    'ไปซื้อนก ปลา เต่า มาปล่อยทำบุญด้วยกันไหมพิม? 🕊️🐟',
-    'ไปนั่งชิงช้าสวรรค์ชมวิวงานวัดด้วยกันไหม? 🎡',
-    'ไปไหว้พระทำบุญด้วยกันนะพิม 🙏✨',
     'ปีนี้และปีต่อๆ ไปก็มาลอยกระทงด้วยกันนะ ❤️'
 ];
 
-// ร้านค้า กิจกรรม และเครื่องเล่นในงานวันลอยกระทง
+// ร้านค้า ซุ้มเซียมซี ซุ้มถ่ายรูป และเครื่องเล่น
 const stalls = [
-    // โซนด้านบน: ร้านค้าและกิจกรรมงานวัด
     {
         id: 'temple',
         name: 'ซุ้มไหว้พระทำบุญ',
         sub: 'กดเพื่อยกมือไหว้พระทำบุญร่วมกัน',
         icon: '🙏',
-        x: 200,
+        x: 165,
         y: 360,
-        interactX: 200,
+        interactX: 165,
         interactY: 440,
-        radius: 100,
+        radius: 95,
         color: '#f59e0b'
+    },
+    {
+        id: 'siamsi',
+        name: 'ซุ้มเซียมซีคู่รัก',
+        sub: 'เขย่าเซียมซีเสี่ยงทายดวงความรัก',
+        icon: '🎋',
+        x: 345,
+        y: 360,
+        interactX: 345,
+        interactY: 440,
+        radius: 95,
+        color: '#f43f5e'
     },
     {
         id: 'animalshop',
         name: 'ร้านปล่อยสัตว์ทำบุญ',
         sub: 'เลือกซื้อนก ปลา หนู เต่า ไปปล่อยทำบุญ',
         icon: '🐟',
-        x: 500,
+        x: 540,
         y: 360,
-        interactX: 500,
+        interactX: 540,
         interactY: 440,
-        radius: 100,
+        radius: 95,
         color: '#10b981'
     },
     {
@@ -187,11 +201,11 @@ const stalls = [
         name: 'ร้านโคมไฟและโคมลอย',
         sub: 'ซื้อโคมแล้วกดปล่อยขึ้นฟ้าได้เลย',
         icon: '🏮',
-        x: 1100,
+        x: 1080,
         y: 360,
-        interactX: 1100,
+        interactX: 1080,
         interactY: 440,
-        radius: 100,
+        radius: 95,
         color: '#fb923c'
     },
     {
@@ -199,9 +213,9 @@ const stalls = [
         name: 'ร้านสตรีทฟู้ดของกินเล่น',
         sub: 'ลูกชิ้นปิ้ง ไก่ทอด ข้าวโพด หมึกย่าง',
         icon: '🍢',
-        x: 1400,
+        x: 1360,
         y: 360,
-        interactX: 1400,
+        interactX: 1360,
         interactY: 440,
         radius: 95,
         color: '#ef4444'
@@ -211,9 +225,9 @@ const stalls = [
         name: 'ร้านขนมไทยและเครื่องดื่ม',
         sub: 'บัวลอย ข้าวต้มมัด โตเกียว ชานมไข่มุก',
         icon: '🧋',
-        x: 1700,
+        x: 1640,
         y: 360,
-        interactX: 1700,
+        interactX: 1640,
         interactY: 440,
         radius: 95,
         color: '#ec4899'
@@ -223,34 +237,45 @@ const stalls = [
         name: 'ร้านของฝากและของเล่น',
         sub: 'สินค้าแฮนด์เมด เครื่องประดับ ของเล่น',
         icon: '🧸',
-        x: 2000,
+        x: 1920,
         y: 360,
-        interactX: 2000,
+        interactX: 1920,
         interactY: 440,
         radius: 95,
         color: '#f97316'
+    },
+    {
+        id: 'photobooth',
+        name: 'ซุ้มถ่ายรูปคู่ & โปสการ์ด',
+        sub: 'ถ่ายรูปคู่กับเป๊ปซี่ บันทึกลงเครื่องได้',
+        icon: '📸',
+        x: 2150,
+        y: 360,
+        interactX: 2150,
+        interactY: 440,
+        radius: 95,
+        color: '#38bdf8'
     },
     {
         id: 'stage',
         name: 'เวทีนางนพมาศ & คอนเสิร์ต',
         sub: 'กดชมประกวดนางนพมาศคู่กัน',
         icon: '🎤',
-        x: 2330,
+        x: 2380,
         y: 360,
-        interactX: 2330,
+        interactX: 2380,
         interactY: 445,
-        radius: 105,
+        radius: 100,
         color: '#a855f7'
     },
-    // โซนเครื่องเล่นงานวัดฝั่งขวา
     {
         id: 'ferris',
         name: 'ชิงช้าสวรรค์',
         sub: 'กดขึ้นนั่งชิงช้าสวรรค์ชมวิวกับเป๊ปซี่',
         icon: '🎡',
-        x: 2640,
+        x: 2660,
         y: 450,
-        interactX: 2640,
+        interactX: 2660,
         interactY: 510,
         radius: 115,
         color: '#38bdf8'
@@ -260,9 +285,9 @@ const stalls = [
         name: 'ม้าหมุนงานวัด',
         sub: 'กดขึ้นขี่ม้าหมุนสุดโรแมนติก',
         icon: '🎠',
-        x: 2880,
+        x: 2890,
         y: 560,
-        interactX: 2880,
+        interactX: 2890,
         interactY: 615,
         radius: 105,
         color: '#fb7185'
@@ -279,7 +304,6 @@ const stalls = [
         radius: 95,
         color: '#8b5cf6'
     },
-    // โซนริมแม่น้ำด้านล่าง
     {
         id: 'trashbin',
         name: 'จุดทิ้งขยะแยก 4 สี',
@@ -359,7 +383,302 @@ for (let i = 0; i < 12; i++) {
 }
 
 // =========================================================
-// ระบบร้านขายโคมไฟ & ปล่อยโคมลอยตรงจุดที่ยืนอยู่ได้เลย
+// ระบบปุ่มจูงมือเดิน & กิน/ป้อนของอร่อยให้เป๊ปซี่
+// =========================================================
+function toggleHoldHands() {
+    if (!gameStarted || rideState.active) return;
+    pim.holdingHands = !pim.holdingHands;
+    playRanatNote(pim.holdingHands ? 783.99 : 523.25, 0.16, 0.05);
+
+    const btn = document.getElementById('btnHoldHands');
+    const label = document.getElementById('holdHandsLabel');
+    if (pim.holdingHands) {
+        btn.classList.add('border-pink-400', 'bg-pink-500/30', 'btn-glow');
+        label.textContent = 'จูงมืออยู่ ❤️';
+        pim.chatText = 'จับมือเป๊ปซี่เดินไปด้วยกันนะ 🤝💕';
+        pepsi.chatText = 'จับมือพิมไว้แน่นๆ เลยครับ ไม่ปล่อยแน่นอน ❤️';
+        showToast('พิมกับเป๊ปซี่จับมือเดินเคียงข้างกันแล้ว 🤝❤️', '🤝');
+        for (let i = 0; i < 6; i++) spawnHeart((pim.x + pepsi.x) / 2, pim.y - 50, '#fb7185');
+    } else {
+        btn.classList.remove('border-pink-400', 'bg-pink-500/30', 'btn-glow');
+        label.textContent = 'จูงมือ';
+        pim.chatText = 'ปล่อยมือก่อนนะ เดี๋ยวแวะดูของแป๊บนึง 😊';
+        pepsi.chatText = 'ครับผม เป๊ปซี่เดินตามอยู่ใกล้ๆ ตลอดนะ ❤️';
+        showToast('ปล่อยมือชั่วคราว (เป๊ปซี่ยังเดินตามอยู่ข้างๆ)', '✨');
+    }
+    pim.chatTimer = 3.5;
+    pepsi.chatTimer = 4;
+}
+
+function eatOrFeedHeldFood() {
+    if (!pim.heldItem || pim.heldItem.kind !== 'food') return;
+    const food = pim.heldItem;
+    pim.heldItem = null;
+    updateHeldItemUI();
+    playSuccessChime();
+
+    pim.chatText = `ป้อน${food.name}ให้เป๊ปซี่ อร่อยไหม? ${food.icon}`;
+    pim.chatTimer = 4;
+    pepsi.chatText = `อร่อยมากครับพิม ขอบคุณที่ป้อนให้นะ รักที่สุดเลย ❤️`;
+    pepsi.chatTimer = 5;
+
+    for (let i = 0; i < 12; i++) {
+        setTimeout(() => {
+            spawnHeart((pim.x + pepsi.x) / 2 + (Math.random() * 50 - 25), pim.y - 50, i % 2 === 0 ? '#fb7185' : '#fde047');
+        }, i * 90);
+    }
+    showToast(`พิมกินและป้อน "${food.name}" ให้เป๊ปซี่อย่างน่ารัก ❤️`, food.icon);
+}
+
+// =========================================================
+// ระบบซุ้มเซียมซีคู่รัก
+// =========================================================
+const siamSiFortunes = [
+    {
+        num: 'ใบที่ 1',
+        rank: '✨ มหามงคลคู่รัก ✨',
+        poem: 'เซียมซีใบที่หนึ่งกล่าวไว้ว่า ความรักของพิมกับเป๊ปซี่เปรียบดั่งดวงจันทร์คู่สายน้ำ ยิ่งอยู่ด้วยกันยิ่งส่งเสริมให้มีแต่ความสุขสมหวังตลอดปี'
+    },
+    {
+        num: 'ใบที่ 9',
+        rank: '💖 ดวงสมพงษ์นิรันดร์ 💖',
+        poem: 'เซียมซีใบที่เก้าทำนายว่า คู่สร้างคู่สมเดินเคียงข้างไม่ห่างหาย อุปสรรคใดๆ จะพ่ายแพ้ต่อความใส่ใจที่มอบให้กันทุกวัน'
+    },
+    {
+        num: 'ใบที่ 14',
+        rank: '🌕 คืนวันเพ็ญสมปรารถนา 🌕',
+        poem: 'เซียมซีใบที่สิบสี่ทายทักว่า คำอธิษฐานในคืนลอยกระทงนี้จะเป็นจริง เตรียมรับข่าวดีและเรื่องน่ายินดีที่กำลังจะเข้ามาเร็วๆ นี้'
+    },
+    {
+        num: 'ใบที่ 24',
+        rank: '🌸 รักหวานชื่นรื่นรมย์ 🌸',
+        poem: 'เซียมซีใบที่ยี่สิบสี่บอกว่า รอยยิ้มของพิมคือพลังใจสำคัญของเป๊ปซี่ ปีนี้จะเต็มไปด้วยทริปท่องเที่ยวและช่วงเวลาดีๆ ร่วมกัน'
+    }
+];
+
+function shakeSiamSi() {
+    const cup = document.getElementById('siamSiCup');
+    const resultBox = document.getElementById('siamSiResultBox');
+    const btn = document.getElementById('btnShakeSiamSi');
+
+    btn.disabled = true;
+    resultBox.classList.add('hidden');
+    cup.classList.add('animate-shake-cup');
+    playRanatNote(523.25, 0.12, 0.05);
+    setTimeout(() => playRanatNote(659.25, 0.12, 0.05), 180);
+    setTimeout(() => playRanatNote(783.99, 0.12, 0.05), 360);
+
+    setTimeout(() => {
+        cup.classList.remove('animate-shake-cup');
+        btn.disabled = false;
+        playSuccessChime();
+
+        const pick = siamSiFortunes[Math.floor(Math.random() * siamSiFortunes.length)];
+        document.getElementById('siamSiNumber').textContent = pick.num;
+        document.getElementById('siamSiRank').textContent = pick.rank;
+        document.getElementById('siamSiPoem').textContent = pick.poem;
+        resultBox.classList.remove('hidden');
+
+        questProgress.templeOrFortune = true;
+        updateSecretLetterStatus();
+
+        pim.chatText = `ได้เซียมซี${pick.num} ดีใจจังเลยเป๊ปซี่! 🎋✨`;
+        pim.chatTimer = 4.5;
+        pepsi.chatText = `คำทำนายแม่นมากครับพิม เราจะรักกันแบบนี้ทุกปีเลย ❤️`;
+        pepsi.chatTimer = 5;
+    }, 950);
+}
+
+// =========================================================
+// ระบบซุ้มถ่ายรูปคู่ & โปสการ์ดที่ระลึก (Save PNG)
+// =========================================================
+let currentPhotoPose = 'heart';
+
+function openPhotoBoothModal() {
+    openModal('modalPhotoBooth');
+    setPhotoPose(currentPhotoPose);
+}
+
+function setPhotoPose(pose) {
+    currentPhotoPose = pose;
+    ['heart', 'peace', 'krathong'].forEach(p => {
+        const el = document.getElementById('pose-' + p);
+        if (el) {
+            if (p === pose) el.classList.add('border-amber-300', 'bg-amber-400/20');
+            else el.classList.remove('border-amber-300', 'bg-amber-400/20');
+        }
+    });
+    renderPostcardCanvas();
+}
+
+function renderPostcardCanvas() {
+    const pCanvas = document.getElementById('postcardCanvas');
+    if (!pCanvas) return;
+    const pCtx = pCanvas.getContext('2d');
+    const W = pCanvas.width;
+    const H = pCanvas.height;
+
+    pCtx.clearRect(0, 0, W, H);
+
+    // พื้นหลังท้องฟ้ายามค่ำคืนและแม่น้ำในโปสการ์ด
+    const bg = pCtx.createLinearGradient(0, 0, 0, H);
+    bg.addColorStop(0, '#090e26');
+    bg.addColorStop(0.65, '#251a4e');
+    bg.addColorStop(1, '#0e2954');
+    pCtx.fillStyle = bg;
+    pCtx.fillRect(0, 0, W, H);
+
+    // พระจันทร์เต็มดวง
+    pCtx.fillStyle = '#fef08a';
+    pCtx.beginPath();
+    pCtx.arc(265, 48, 24, 0, Math.PI * 2);
+    pCtx.fill();
+
+    // โคมลอยประดับฉากหลัง
+    pCtx.font = '18px sans-serif';
+    pCtx.fillText('🏮', 38, 52);
+    pCtx.fillText('✨', 85, 36);
+    pCtx.fillText('🎆', 205, 42);
+
+    // ท่าน้ำไม้ด้านล่าง
+    pCtx.fillStyle = '#6b4226';
+    pCtx.fillRect(20, 165, W - 40, 26);
+
+    // วาดเป๊ปซี่และพิมตรงกลางโปสการ์ด
+    pCtx.save();
+    pCtx.translate(132, 168);
+    pCtx.scale(1.25, 1.25);
+    // ตัวเป๊ปซี่
+    pCtx.fillStyle = '#1e3a8a';
+    pCtx.beginPath(); pCtx.roundRect(-12, -25, 24, 23, 5); pCtx.fill();
+    pCtx.fillStyle = '#fef3c7';
+    pCtx.beginPath(); pCtx.roundRect(-11, -45, 22, 22, 6); pCtx.fill();
+    pCtx.fillStyle = '#f6d5c3';
+    pCtx.beginPath(); pCtx.arc(0, -56, 12, 0, Math.PI * 2); pCtx.fill();
+    pCtx.fillStyle = '#171717';
+    pCtx.beginPath(); pCtx.arc(0, -59, 12.2, Math.PI * 0.95, Math.PI * 2.05); pCtx.fill();
+    pCtx.beginPath(); pCtx.arc(-3.5, -55, 1.6, 0, Math.PI * 2); pCtx.arc(3.5, -55, 1.6, 0, Math.PI * 2); pCtx.fill();
+    pCtx.restore();
+
+    pCtx.save();
+    pCtx.translate(188, 168);
+    pCtx.scale(1.25, 1.25);
+    // ตัวพิม
+    pCtx.fillStyle = '#db2777';
+    pCtx.beginPath(); pCtx.moveTo(-11, -24); pCtx.lineTo(11, -24); pCtx.lineTo(13, 0); pCtx.lineTo(-13, 0); pCtx.closePath(); pCtx.fill();
+    pCtx.fillStyle = '#fbcfe8';
+    pCtx.beginPath(); pCtx.roundRect(-10, -42, 20, 19, 6); pCtx.fill();
+    pCtx.fillStyle = '#1e1b18';
+    pCtx.beginPath(); pCtx.arc(0, -54, 14, 0, Math.PI * 2); pCtx.fill();
+    pCtx.fillRect(-13, -54, 26, 20);
+    pCtx.fillStyle = '#fde6d8';
+    pCtx.beginPath(); pCtx.arc(0, -52, 11.5, 0, Math.PI * 2); pCtx.fill();
+    pCtx.fillStyle = '#1e1b18';
+    pCtx.beginPath(); pCtx.arc(0, -55, 11.5, Math.PI, Math.PI * 2); pCtx.fill();
+    pCtx.fillStyle = '#f43f5e';
+    pCtx.beginPath(); pCtx.arc(9, -60, 4, 0, Math.PI * 2); pCtx.fill();
+    pCtx.fillStyle = '#1e1b18';
+    pCtx.beginPath(); pCtx.arc(-3.5, -51, 1.6, 0, Math.PI * 2); pCtx.arc(3.5, -51, 1.6, 0, Math.PI * 2); pCtx.fill();
+    pCtx.restore();
+
+    // ท่าโพสพิเศษตรงกลางระหว่างสองคน
+    pCtx.textAlign = 'center';
+    if (currentPhotoPose === 'heart') {
+        pCtx.font = '26px sans-serif';
+        pCtx.fillText('🫶', 160, 128);
+    } else if (currentPhotoPose === 'peace') {
+        pCtx.font = '22px sans-serif';
+        pCtx.fillText('✌️', 105, 125);
+        pCtx.fillText('✌️', 215, 125);
+        pCtx.fillText('❤️', 160, 82);
+    } else if (currentPhotoPose === 'krathong') {
+        pCtx.font = '28px sans-serif';
+        pCtx.fillText('🪷', 160, 142);
+    }
+
+    // กรอบโปสการ์ดสีทองและข้อความที่ระลึก
+    pCtx.strokeStyle = '#fde047';
+    pCtx.lineWidth = 4;
+    pCtx.strokeRect(6, 6, W - 12, H - 12);
+
+    pCtx.fillStyle = 'rgba(10, 14, 35, 0.78)';
+    pCtx.beginPath();
+    pCtx.roundRect(45, 184, W - 90, 26, 10);
+    pCtx.fill();
+
+    pCtx.fillStyle = '#fef08a';
+    pCtx.font = 'bold 12px Mali, sans-serif';
+    pCtx.fillText('ลอยกระทงคืนวันเพ็ญ • เป๊ปซี่ ❤️ พิม', W / 2, 201);
+}
+
+function downloadPostcardImage() {
+    const pCanvas = document.getElementById('postcardCanvas');
+    if (!pCanvas) return;
+    playSuccessChime();
+    const link = document.createElement('a');
+    link.download = 'loy-krathong-pim-pepsi.png';
+    link.href = pCanvas.toDataURL('image/png');
+    link.click();
+
+    pim.chatText = 'บันทึกรูปโปสการ์ดคู่กับเป๊ปซี่ลงเครื่องแล้ว 📸❤️';
+    pim.chatTimer = 4;
+    pepsi.chatText = 'รูปน่ารักมากเลยพิม เก็บไว้ดูด้วยกันนะ ❤️';
+    pepsi.chatTimer = 4.5;
+    showToast('บันทึกรูปโปสการ์ดลงเครื่องเรียบร้อย! 📸', '📥');
+}
+
+// =========================================================
+// ระบบจดหมายลับจากเป๊ปซี่ (ปลดล็อกเมื่อทำภารกิจครบ 3 อย่าง)
+// =========================================================
+function updateSecretLetterStatus() {
+    const isUnlocked = questProgress.templeOrFortune && questProgress.releasedLantern && questProgress.floatedKrathong;
+    const icon = document.getElementById('secretLetterIcon');
+    const badge = document.getElementById('secretLetterBadge');
+
+    if (isUnlocked) {
+        if (icon) icon.textContent = '💌';
+        if (badge) badge.classList.remove('hidden');
+    } else {
+        if (icon) icon.textContent = '🔒';
+        if (badge) badge.classList.add('hidden');
+    }
+}
+
+function openSecretLetterModal() {
+    const isUnlocked = questProgress.templeOrFortune && questProgress.releasedLantern && questProgress.floatedKrathong;
+    const lockedView = document.getElementById('secretLetterLockedView');
+    const unlockedView = document.getElementById('secretLetterUnlockedView');
+
+    if (isUnlocked) {
+        lockedView.classList.add('hidden');
+        unlockedView.classList.remove('hidden');
+        document.getElementById('secretLetterBodyText').textContent = SECRET_LOVE_LETTER;
+        document.getElementById('secretLetterBadge').classList.add('hidden');
+        playSuccessChime();
+    } else {
+        unlockedView.classList.add('hidden');
+        lockedView.classList.remove('hidden');
+        const list = document.getElementById('questChecklist');
+        list.innerHTML = `
+            <div class="flex items-center gap-2 ${questProgress.templeOrFortune ? 'text-emerald-300' : 'text-white/75'}">
+                <span>${questProgress.templeOrFortune ? '✅' : '⬜'}</span>
+                <span>1. ไหว้พระทำบุญ หรือ เสี่ยงเซียมซีคู่รัก</span>
+            </div>
+            <div class="flex items-center gap-2 ${questProgress.releasedLantern ? 'text-emerald-300' : 'text-white/75'}">
+                <span>${questProgress.releasedLantern ? '✅' : '⬜'}</span>
+                <span>2. ซื้อโคมลอยและปล่อยขึ้นฟ้าด้วยกัน</span>
+            </div>
+            <div class="flex items-center gap-2 ${questProgress.floatedKrathong ? 'text-emerald-300' : 'text-white/75'}">
+                <span>${questProgress.floatedKrathong ? '✅' : '⬜'}</span>
+                <span>3. ลอยกระทงอธิษฐานที่ท่าน้ำ</span>
+            </div>
+        `;
+    }
+    openModal('modalSecretLetter');
+}
+
+// =========================================================
+// ระบบร้านขายโคมไฟ & ปล่อยโคมลอย
 // =========================================================
 function pickLanternItem(name, bodyColor, glowColor, icon) {
     closeAllModals();
@@ -386,7 +705,9 @@ function releaseSkyLantern() {
     pim.heldItem = null;
     updateHeldItemUI();
 
-    // ปล่อยโคมลอยขึ้นสู่ท้องฟ้าจากตำแหน่งตรงที่พิมและเป๊ปซี่ยืนอยู่พอดี
+    questProgress.releasedLantern = true;
+    updateSecretLetterStatus();
+
     const launchX = (pim.x + pepsi.x) / 2;
     const launchY = Math.min(pim.y, pepsi.y) - 48;
 
@@ -403,7 +724,7 @@ function releaseSkyLantern() {
 
     pim.chatText = `ปล่อย${lanternItem.name}ขึ้นฟ้าแล้ว สวยจัง! ✨`;
     pim.chatTimer = 4.5;
-    pepsi.chatText = 'โคมลอยขึ้นฟ้าจากตรงที่เรายืนสวยมากๆ ขอให้รักของเราสว่างไสวแบบนี้ตลอดไปนะพิม ❤️';
+    pepsi.chatText = 'โคมลอยขึ้นฟ้าสวยมากๆ ขอให้รักของเราสว่างไสวแบบนี้ตลอดไปนะพิม ❤️';
     pepsi.chatTimer = 5.5;
 
     savedMemories.unshift({
@@ -414,14 +735,14 @@ function releaseSkyLantern() {
     });
     updateMemoriesUI();
 
-    showToast(`ปล่อย${lanternItem.name}ขึ้นฟ้าจากตรงที่ยืนเรียบร้อย!`, lanternItem.icon);
+    showToast(`ปล่อย${lanternItem.name}ขึ้นฟ้าเรียบร้อย!`, lanternItem.icon);
     for (let i = 0; i < 10; i++) {
         spawnHeart(launchX + (Math.random() * 60 - 30), launchY, '#fbbf24');
     }
 }
 
 // =========================================================
-// ระบบซื้อสัตว์ทำบุญปล่อยชีวิต (นก ปลา หนู เต่า หอย กบ)
+// ระบบซื้อสัตว์ทำบุญปล่อยชีวิต
 // =========================================================
 function selectReleaseAnimal(animalType, name, icon, blessingQuote) {
     closeAllModals();
@@ -436,9 +757,9 @@ function selectReleaseAnimal(animalType, name, icon, blessingQuote) {
     updateHeldItemUI();
     pim.chatText = `รับ${name}มาแล้ว เดินไปจุดปล่อยสัตว์ริมน้ำกันเถอะ ${icon}`;
     pim.chatTimer = 4.5;
-    pepsi.chatText = `อนุโมทนาสาธุครับพิม เดินไปที่ "จุดปล่อยปลาและปล่อยสัตว์ทำบุญ" ริมน้ำกัน ❤️`;
+    pepsi.chatText = `อนุโมทนาสาธุครับพิม เดินไปที่ "จุดปล่อยปลาและสัตว์ทำบุญ" ริมน้ำกัน ❤️`;
     pepsi.chatTimer = 5.5;
-    showToast(`รับ${name}แล้ว! เดินไปที่จุดปล่อยปลาและปล่อยสัตว์ทำบุญริมน้ำ`, icon);
+    showToast(`รับ${name}แล้ว! เดินไปที่จุดปล่อยปลาและสัตว์ทำบุญริมน้ำ`, icon);
 }
 
 function releaseBoughtAnimal() {
@@ -521,7 +842,7 @@ function releaseBoughtAnimal() {
 }
 
 // =========================================================
-// ปุ่มยกมือไหว้คู่กัน (ทั้งพิมและเป๊ปซี่)
+// ปุ่มยกมือไหว้คู่กัน
 // =========================================================
 function triggerCoupleWai() {
     if (!gameStarted || isAnyModalOpen()) return;
@@ -536,6 +857,8 @@ function triggerCoupleWai() {
     pim.targetY = null;
 
     if (activeInteractTarget && activeInteractTarget.id === 'temple') {
+        questProgress.templeOrFortune = true;
+        updateSecretLetterStatus();
         pim.chatText = 'สาธุ... ขอพรพระร่วมกับเป๊ปซี่ 🙏✨';
         pepsi.chatText = 'สาธุครับ ขอให้พิมมีแต่ความสุข สุขภาพแข็งแรงนะ 🙏❤️';
         showToast('พิมและเป๊ปซี่ยกมือไหว้พระทำบุญร่วมกัน 🙏✨', '🙏');
@@ -564,7 +887,7 @@ function triggerCoupleWai() {
 }
 
 // =========================================================
-// ระบบบังคับตัวละคร (จิ้มบนพื้นเพื่อเดินอย่างเดียว)
+// ระบบบังคับตัวละคร
 // =========================================================
 const keys = {};
 let activeInteractTarget = null;
@@ -594,7 +917,7 @@ canvas.addEventListener('pointerdown', (e) => {
 });
 
 // =========================================================
-// ระบบเสียงเพลงพื้นหลัง 4 เพลง (รองรับไฟล์เพลงของเรา + ปรับระดับเสียง)
+// ระบบเสียงเพลงพื้นหลัง 3 เพลง
 // =========================================================
 function initAudio() {
     if (!audioCtx) {
@@ -623,7 +946,7 @@ function playSelectedSong(index, announce = true) {
     if (!song) return;
 
     const hudNameEl = document.getElementById('currentSongHudName');
-    if (hudNameEl) hudNameEl.textContent = `เพลงที่ ${index + 1}`;
+    if (hudNameEl) hudNameEl.textContent = `เพลง ${index + 1}`;
 
     if (musicInterval) {
         clearInterval(musicInterval);
@@ -640,7 +963,6 @@ function playSelectedSong(index, announce = true) {
             usingHtml5Audio = true;
             renderMusicModalUI();
         }).catch(() => {
-            // หากยังไม่ได้ใส่ไฟล์ใน sounds/ จะเล่นทำนองดนตรีในตัวอัตโนมัติแทน
             startSynthFallbackLoop(song);
             renderMusicModalUI();
         });
@@ -656,9 +978,7 @@ function playSelectedSong(index, announce = true) {
 
 function setMusicVolume(val) {
     musicVolume = Math.max(0, Math.min(1, val));
-    if (musicVolume > 0 && !audioEnabled) {
-        audioEnabled = true;
-    }
+    if (musicVolume > 0 && !audioEnabled) audioEnabled = true;
     bgAudioPlayer.volume = audioEnabled ? musicVolume : 0;
     renderMusicModalUI();
 }
@@ -941,6 +1261,7 @@ function startGame() {
     document.getElementById('topHud').classList.remove('hidden');
     document.getElementById('bottomHudContainer').classList.remove('hidden');
     updateHeldItemUI();
+    updateSecretLetterStatus();
     gameStarted = true;
     initAudio();
     playSuccessChime();
@@ -961,8 +1282,8 @@ function selectInventorySlot(index) {
 function updateHeldItemUI() {
     const el = document.getElementById('heldItemDisplay');
     const btnLantern = document.getElementById('btnReleaseLantern');
+    const btnEatFood = document.getElementById('btnEatFood');
 
-    // อัปเดตหน้าตาช่องเก็บของ 5 ช่องตรงกลางล่าง
     for (let i = 0; i < 5; i++) {
         const slotEl = document.getElementById('invSlot' + i);
         if (!slotEl) continue;
@@ -986,21 +1307,25 @@ function updateHeldItemUI() {
         }
     }
 
+    btnLantern.classList.add('hidden');
+    btnEatFood.classList.add('hidden');
+
     if (!pim.heldItem) {
         el.innerHTML = `<span>ช่อง ${pim.selectedSlot + 1}: มือว่าง</span>`;
-        btnLantern.classList.add('hidden');
     } else if (pim.heldItem.kind === 'krathong') {
         el.innerHTML = `<span>${pim.heldItem.icon} ถือ${pim.heldItem.name}</span>`;
-        btnLantern.classList.add('hidden');
     } else if (pim.heldItem.kind === 'lantern') {
         el.innerHTML = `<span>${pim.heldItem.icon} ถือ${pim.heldItem.name}</span>`;
         btnLantern.classList.remove('hidden');
     } else if (pim.heldItem.kind === 'animal') {
         el.innerHTML = `<span>${pim.heldItem.icon} เตรียมปล่อย${pim.heldItem.name}</span>`;
-        btnLantern.classList.add('hidden');
+    } else if (pim.heldItem.kind === 'food') {
+        el.innerHTML = `<span>${pim.heldItem.icon} ถือ${pim.heldItem.name}</span>`;
+        document.getElementById('btnEatFoodIcon').textContent = pim.heldItem.icon;
+        document.getElementById('btnEatFoodText').textContent = `กิน & ป้อน${pim.heldItem.name}ให้เป๊ปซี่ ❤️`;
+        btnEatFood.classList.remove('hidden');
     } else {
         el.innerHTML = `<span>${pim.heldItem.icon} ถือ${pim.heldItem.name}</span>`;
-        btnLantern.classList.add('hidden');
     }
 }
 
@@ -1011,10 +1336,10 @@ function pickFoodItem(name, icon, pimQuote) {
     updateHeldItemUI();
     pim.chatText = pimQuote;
     pim.chatTimer = 4;
-    pepsi.chatText = 'อร่อยไหมพิม เดี๋ยวเป๊ปซี่จ่ายให้เอง กินเยอะๆ นะ ❤️';
+    pepsi.chatText = 'อร่อยไหมพิม กดปุ่มป้อนเป๊ปซี่ด้วยนะ ❤️';
     pepsi.chatTimer = 5;
     for (let i = 0; i < 6; i++) spawnHeart((pim.x + pepsi.x) / 2, pim.y - 45, '#fb7185');
-    showToast(`ซื้อ${name}มากินเดินเที่ยวงานกับเป๊ปซี่!`, icon);
+    showToast(`ซื้อ${name}แล้ว! กดปุ่มสีชมพูด้านล่างเพื่อกินและป้อนเป๊ปซี่ได้`, icon);
 }
 
 function pickSouvenirItem(name, icon) {
@@ -1036,6 +1361,10 @@ function handleInteract() {
 
     if (id === 'temple') {
         triggerCoupleWai();
+    } else if (id === 'siamsi') {
+        openModal('modalSiamSi');
+    } else if (id === 'photobooth') {
+        openPhotoBoothModal();
     } else if (id === 'lanternshop') {
         openModal('modalLanternShop');
     } else if (id === 'animalshop') {
@@ -1172,6 +1501,9 @@ function confirmFloatKrathong() {
     pim.heldItem = null;
     updateHeldItemUI();
 
+    questProgress.floatedKrathong = true;
+    updateSecretLetterStatus();
+
     pim.x = 1090;
     pim.y = 790;
     pepsi.x = 1150;
@@ -1237,11 +1569,7 @@ function closeSurpriseAndCelebrate() {
 }
 
 // =========================================================
-// จัดการหน้าต่าง Modal & แจ้งเตือน
-// =========================================================
-
-// =========================================================
-// ระบบจุดทิ้งขยะแยกประเภท (เขียว เหลือง น้ำเงิน แดง)
+// ระบบจุดทิ้งขยะแยกประเภท
 // =========================================================
 function getBinCategoryForItem(item) {
     if (!item) return { binColor: 'ถังสีน้ำเงิน (ขยะทั่วไป)', badgeClass: 'bg-sky-500/30 text-sky-200 border-sky-400/50' };
@@ -1317,8 +1645,15 @@ function discardInventorySlot(slotIdx) {
 
 function openModal(modalId) {
     document.getElementById('modalBackdrop').classList.remove('hidden');
-    ['modalKrathongShop', 'modalLanternShop', 'modalAnimalShop', 'modalStreetFood', 'modalThaiDessert', 'modalSouvenirShop', 'modalBalloonGame', 'modalWish', 'modalPepsiSurprise', 'modalTrashBin', 'modalMusicPlayer', 'modalMemories'].forEach(id => {
-        document.getElementById(id).classList.add('hidden');
+    [
+        'modalKrathongShop', 'modalLanternShop', 'modalAnimalShop',
+        'modalStreetFood', 'modalThaiDessert', 'modalSouvenirShop',
+        'modalBalloonGame', 'modalWish', 'modalPepsiSurprise',
+        'modalTrashBin', 'modalMusicPlayer', 'modalMemories',
+        'modalSiamSi', 'modalPhotoBooth', 'modalSecretLetter'
+    ].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.classList.add('hidden');
     });
     document.getElementById(modalId).classList.remove('hidden');
 }
@@ -1430,7 +1765,7 @@ setInterval(() => {
 }, 3200);
 
 // =========================================================
-// อัปเดตตำแหน่งตัวละครและการเคลื่อนไหว (Game Loop Update)
+// อัปเดตตำแหน่งตัวละครและการเคลื่อนไหว
 // =========================================================
 function update(dt) {
     if (!gameStarted) return;
@@ -1444,13 +1779,12 @@ function update(dt) {
         if (pepsi.prayTimer <= 0) pepsi.isPraying = false;
     }
 
-    // 1. กรณีกำลังนั่งชิงช้าสวรรค์หรือม้าหมุน
     if (rideState.active) {
         rideState.timer -= dt;
         rideState.angle += dt * 1.1;
 
         if (rideState.type === 'ferris') {
-            const cx = 2640, cy = 285, r = 110;
+            const cx = 2660, cy = 285, r = 110;
             const gx = cx + Math.cos(rideState.angle) * r;
             const gy = cy + Math.sin(rideState.angle) * r + 28;
             pim.x = gx - 14;
@@ -1458,7 +1792,7 @@ function update(dt) {
             pepsi.x = gx + 14;
             pepsi.y = gy;
         } else if (rideState.type === 'carousel') {
-            const cx = 2880, cy = 545;
+            const cx = 2890, cy = 545;
             const offset = Math.sin(rideState.angle * 2) * 35;
             const bob = Math.sin(rideState.angle * 4) * 8;
             pim.x = cx + offset - 16;
@@ -1472,16 +1806,15 @@ function update(dt) {
         if (rideState.timer <= 0) {
             rideState.active = false;
             if (rideState.type === 'ferris') {
-                pim.x = 2625; pim.y = 515;
-                pepsi.x = 2665; pepsi.y = 515;
+                pim.x = 2645; pim.y = 515;
+                pepsi.x = 2685; pepsi.y = 515;
             } else {
-                pim.x = 2865; pim.y = 620;
-                pepsi.x = 2905; pepsi.y = 620;
+                pim.x = 2875; pim.y = 620;
+                pepsi.x = 2915; pepsi.y = 620;
             }
             showToast('ลงจากเครื่องเล่นเรียบร้อย สนุกสุดๆ เลย ❤️', '✨');
         }
     } else {
-        // 2. การเดินปกติของพิม (จิ้มพื้นเพื่อเดินเป็นหลัก)
         let moveX = 0;
         let moveY = 0;
 
@@ -1516,22 +1849,30 @@ function update(dt) {
         pim.x = Math.max(70, Math.min(WORLD_WIDTH - 70, pim.x));
         pim.y = Math.max(PROMENADE_TOP + 60, Math.min(RIVER_Y - 10, pim.y));
 
-        // 3. AI เป๊ปซี่เดินตามพิมอย่างนุ่มนวล
-        const followOffsetX = pim.facing === 1 ? -54 : 54;
+        // ระยะห่างระหว่างพิมกับเป๊ปซี่ (ถ้ากดจูงมือจะเดินชิดเคียงข้างกัน)
+        const followOffsetX = pim.holdingHands
+            ? (pim.facing === 1 ? -28 : 28)
+            : (pim.facing === 1 ? -54 : 54);
         const desiredPepsiX = pim.x + followOffsetX;
-        const desiredPepsiY = pim.y + 6;
+        const desiredPepsiY = pim.holdingHands ? pim.y : pim.y + 6;
         const pDx = desiredPepsiX - pepsi.x;
         const pDy = desiredPepsiY - pepsi.y;
         const pDist = Math.hypot(pDx, pDy);
 
-        if (pDist > 10 && !pepsi.isPraying) {
-            const catchupSpeed = pDist > 160 ? pepsi.speed * 1.35 : pepsi.speed * 0.96;
+        if (pDist > (pim.holdingHands ? 3 : 10) && !pepsi.isPraying) {
+            const catchupSpeed = pim.holdingHands
+                ? pepsi.speed * 1.45
+                : (pDist > 160 ? pepsi.speed * 1.35 : pepsi.speed * 0.96);
             pepsi.x += (pDx / pDist) * catchupSpeed * dt;
             pepsi.y += (pDy / pDist) * catchupSpeed * dt;
             pepsi.walkCycle += dt * 11;
-            if (Math.abs(pDx) > 3) pepsi.facing = pDx > 0 ? 1 : -1;
+            if (pim.holdingHands) {
+                pepsi.facing = pim.facing;
+            } else if (Math.abs(pDx) > 3) {
+                pepsi.facing = pDx > 0 ? 1 : -1;
+            }
         } else {
-            pepsi.facing = pim.x >= pepsi.x ? 1 : -1;
+            pepsi.facing = pim.holdingHands ? pim.facing : (pim.x >= pepsi.x ? 1 : -1);
         }
     }
 
@@ -1554,7 +1895,7 @@ function update(dt) {
         spawnHeart(pepsi.x, pepsi.y - 50, '#f472b6');
     }
 
-    // 4. ตรวจสอบระยะใกล้ร้านค้า เครื่องเล่น หรือท่าน้ำ
+    // ตรวจสอบระยะใกล้ร้านค้า (บังคับเข้ม 100% เมื่อเข้าใกล้)
     let nearest = null;
     let minDist = Infinity;
     if (!rideState.active) {
@@ -1569,7 +1910,6 @@ function update(dt) {
     activeInteractTarget = nearest;
     updateInteractButton(nearest);
 
-    // 5. อัปเดตกระทง ปลา ระลอกน้ำ สัตว์ที่ปล่อยทำบุญ โคมลอย พลุ และหัวใจ
     for (const k of floatingKrathongs) {
         k.x += k.vx * dt;
         k.bobOffset += dt * 2.5;
@@ -1627,7 +1967,6 @@ function update(dt) {
         if (h.alpha <= 0) floatingHearts.splice(i, 1);
     }
 
-    // 6. กล้องติดตามตัวละครพิมและเป๊ปซี่ (รองรับการซูมออกอัตโนมัติบนมือถือ)
     const z = camera.zoom || 1;
     const viewW = canvas.width / z;
     const viewH = canvas.height / z;
@@ -1663,7 +2002,7 @@ function updateInteractButton(target) {
         if (target.id === 'pier') {
             if (pim.heldItem && pim.heldItem.kind === 'krathong') {
                 title.textContent = 'ลอยกระทงอธิษฐาน ❤️';
-                sub.textContent = 'กดเพื่อขอขมาพระแม่คงคาและอธิษฐาน';
+                sub.textContent = 'กดเพื่อขอขมาพระแม่คงคา';
             } else {
                 title.textContent = 'ท่าน้ำลอยกระทง';
                 sub.textContent = 'แวะร้านขายกระทงก่อนนะ';
@@ -1672,10 +2011,10 @@ function updateInteractButton(target) {
             if (pim.heldItem && pim.heldItem.kind === 'animal') {
                 icon.textContent = pim.heldItem.icon;
                 title.textContent = `ปล่อย${pim.heldItem.name} 🙏`;
-                sub.textContent = 'กดเพื่อยกมือไหว้และปล่อยทำบุญร่วมกัน';
+                sub.textContent = 'กดปล่อยทำบุญร่วมกัน';
             } else {
-                title.textContent = 'จุดปล่อยปลาและสัตว์ทำบุญ';
-                sub.textContent = 'แวะร้านขายสัตว์ทำบุญปล่อยชีวิตก่อนนะ';
+                title.textContent = 'จุดปล่อยสัตว์ทำบุญ';
+                sub.textContent = 'แวะร้านสัตว์ทำบุญก่อนนะ';
             }
         } else {
             title.textContent = target.name;
@@ -1685,8 +2024,8 @@ function updateInteractButton(target) {
         btn.classList.remove('opacity-100', 'btn-glow');
         btn.classList.add('opacity-40', 'pointer-events-none');
         icon.textContent = '👆';
-        title.textContent = 'แตะพื้นเพื่อเดิน';
-        sub.textContent = 'เดินไปใกล้ร้านค้าหรือท่าน้ำ';
+        title.textContent = 'แตะพื้นเดิน';
+        sub.textContent = 'เดินไปใกล้ร้านค้า';
     }
 }
 
@@ -1716,7 +2055,6 @@ function draw(time) {
         ctx.fill();
     }
 
-    // พระจันทร์เต็มดวง
     const moonX = 1750, moonY = 105;
     const moonGlow = ctx.createRadialGradient(moonX, moonY, 15, moonX, moonY, 130);
     moonGlow.addColorStop(0, 'rgba(254, 240, 138, 0.95)');
@@ -1732,10 +2070,8 @@ function draw(time) {
     ctx.arc(moonX, moonY, 42, 0, Math.PI * 2);
     ctx.fill();
 
-    // วัดไทยโบราณฉากหลัง
-    drawTempleSilhouette(180, PROMENADE_TOP);
+    drawTempleSilhouette(160, PROMENADE_TOP);
 
-    // พลุเฉลิมฉลอง
     for (const fw of fireworks) {
         for (const p of fw.particles) {
             if (p.alpha <= 0) continue;
@@ -1748,7 +2084,7 @@ function draw(time) {
     }
     ctx.globalAlpha = 1;
 
-    // 2. ลานทางเดินงานวัดและแนวเสาไฟ
+    // 2. ลานทางเดินงานวัด
     const groundGrad = ctx.createLinearGradient(0, PROMENADE_TOP, 0, RIVER_Y);
     groundGrad.addColorStop(0, '#2a223d');
     groundGrad.addColorStop(0.5, '#3b2f4a');
@@ -1767,19 +2103,19 @@ function draw(time) {
 
     drawFestiveGarlands(time);
 
-    // 3. ร้านค้าและเวทีการแสดงในงานวัด
+    // 3. ร้านค้า ซุ้มเซียมซี ซุ้มถ่ายรูป และเวที
     for (const stall of stalls) {
-        if (['temple', 'lanternshop', 'animalshop', 'krathong', 'streetfood', 'dessert', 'souvenir', 'stage', 'balloon'].includes(stall.id)) {
+        if (['temple', 'siamsi', 'lanternshop', 'animalshop', 'krathong', 'streetfood', 'dessert', 'souvenir', 'photobooth', 'stage', 'balloon'].includes(stall.id)) {
             drawStall(stall, activeInteractTarget && activeInteractTarget.id === stall.id);
         }
     }
 
-    // 4. เครื่องเล่นงานวัดขนาดใหญ่ (ชิงช้าสวรรค์ และ ม้าหมุน)
+    // 4. เครื่องเล่นงานวัดขนาดใหญ่
     const ferrisAngle = rideState.active && rideState.type === 'ferris' ? rideState.angle : time * 0.00055;
-    drawInteractiveFerrisWheel(2640, 285, ferrisAngle, activeInteractTarget && activeInteractTarget.id === 'ferris');
-    drawInteractiveCarousel(2880, 545, time * 0.002, activeInteractTarget && activeInteractTarget.id === 'carousel');
+    drawInteractiveFerrisWheel(2660, 285, ferrisAngle, activeInteractTarget && activeInteractTarget.id === 'ferris');
+    drawInteractiveCarousel(2890, 545, time * 0.002, activeInteractTarget && activeInteractTarget.id === 'carousel');
 
-    // 5. แม่น้ำเจ้าพระยายามค่ำคืน เงาสะท้อนพระจันทร์ และฝูงปลา
+    // 5. แม่น้ำเจ้าพระยา
     const riverGrad = ctx.createLinearGradient(0, RIVER_Y, 0, WORLD_HEIGHT);
     riverGrad.addColorStop(0, '#0b1938');
     riverGrad.addColorStop(0.4, '#0f254e');
@@ -1827,15 +2163,12 @@ function draw(time) {
     ctx.fillStyle = '#855834';
     ctx.fillRect(0, RIVER_Y - 12, WORLD_WIDTH, 5);
 
-    // 6. ท่าน้ำไม้สำหรับลอยกระทง + จุดทิ้งขยะ 4 สี + จุดปล่อยปลาและปล่อยสัตว์ทำบุญ
     drawWoodenPier(1120, RIVER_Y, activeInteractTarget && activeInteractTarget.id === 'pier');
     drawFourColorTrashBins(560, 810, activeInteractTarget && activeInteractTarget.id === 'trashbin');
     drawRiversideSpot(1650, RIVER_Y, '🐟 จุดปล่อยปลาและปล่อยสัตว์ทำบุญ', activeInteractTarget && activeInteractTarget.id === 'releasespot');
 
-    // 7. กระทงที่ลอยอยู่ในแม่น้ำ
     for (const k of floatingKrathongs) drawRiverKrathong(k, time);
 
-    // 8. สัตว์ที่พิมและเป๊ปซี่ปล่อยคืนสู่ธรรมชาติ
     for (const a of releasedAnimals) {
         ctx.save();
         ctx.globalAlpha = a.alpha;
@@ -1845,7 +2178,7 @@ function draw(time) {
         ctx.restore();
     }
 
-    // 9. ตัวละครเป๊ปซี่และพิม
+    // วาดตัวละครเป๊ปซี่และพิม + เส้นเชื่อมมือถ้ากดจูงมืออยู่
     const characters = [
         { type: 'pepsi', obj: pepsi },
         { type: 'pim', obj: pim }
@@ -1856,7 +2189,25 @@ function draw(time) {
         else drawPim(pim);
     }
 
-    // 10. โคมลอยที่ลอยขึ้นฟ้า (วาดทับด้านบนสุดเพื่อให้เห็นตอนลอยขึ้นจากตรงที่ยืนชัดเจนสวยงาม!)
+    if (pim.holdingHands && !rideState.active && !pim.isPraying) {
+        const hx = (pim.x + pepsi.x) / 2;
+        const hy = (pim.y + pepsi.y) / 2 - 28;
+        ctx.save();
+        ctx.strokeStyle = '#fde6d8';
+        ctx.lineWidth = 4;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(pepsi.x, pepsi.y - 34);
+        ctx.lineTo(hx, hy);
+        ctx.lineTo(pim.x, pim.y - 32);
+        ctx.stroke();
+
+        ctx.font = '13px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('💕', hx, hy - 6);
+        ctx.restore();
+    }
+
     for (const l of skyLanterns) drawSkyLantern(l);
 
     if (pim.targetX !== null && pim.targetY !== null) {
@@ -2105,7 +2456,7 @@ function drawStall(stall, isHighlighted) {
     ctx.fillText(stall.icon, 0, 2);
 
     ctx.font = 'bold 11.5px Prompt, sans-serif';
-    const tagW = Math.max(132, ctx.measureText(stall.name).width + 22);
+    const tagW = Math.max(126, ctx.measureText(stall.name).width + 20);
     ctx.fillStyle = isHighlighted ? 'rgba(49, 24, 78, 0.95)' : 'rgba(15, 20, 45, 0.92)';
     ctx.beginPath();
     ctx.roundRect(-tagW / 2, -84, tagW, 26, 13);
@@ -2119,7 +2470,6 @@ function drawStall(stall, isHighlighted) {
 
     ctx.restore();
 }
-
 
 function drawFourColorTrashBins(cx, riverY, isHighlighted) {
     ctx.save();
@@ -2135,16 +2485,14 @@ function drawFourColorTrashBins(cx, riverY, isHighlighted) {
         ctx.setLineDash([]);
     }
 
-    // วาดถังขยะ 4 สีเรียงกัน (เขียว เหลือง น้ำเงิน แดง)
     const bins = [
-        { body: '#10b981', lid: '#6ee7b7', offsetX: -39 }, // เขียว
-        { body: '#f59e0b', lid: '#fde047', offsetX: -13 }, // เหลือง
-        { body: '#0ea5e9', lid: '#7dd3fc', offsetX: 13 },  // น้ำเงิน
-        { body: '#ef4444', lid: '#fda4af', offsetX: 39 }   // แดง
+        { body: '#10b981', lid: '#6ee7b7', offsetX: -39 },
+        { body: '#f59e0b', lid: '#fde047', offsetX: -13 },
+        { body: '#0ea5e9', lid: '#7dd3fc', offsetX: 13 },
+        { body: '#ef4444', lid: '#fda4af', offsetX: 39 }
     ];
 
     for (const b of bins) {
-        // ตัวถังขยะ
         ctx.fillStyle = b.body;
         ctx.beginPath();
         ctx.roundRect(b.offsetX - 10, -34, 20, 26, [2, 2, 5, 5]);
@@ -2153,14 +2501,12 @@ function drawFourColorTrashBins(cx, riverY, isHighlighted) {
         ctx.lineWidth = 1.2;
         ctx.stroke();
 
-        // ฝาถังขยะด้านบน
         ctx.fillStyle = b.lid;
         ctx.beginPath();
         ctx.roundRect(b.offsetX - 11.5, -39, 23, 6, 3);
         ctx.fill();
         ctx.stroke();
 
-        // ช่องทิ้งตรงฝาถัง
         ctx.fillStyle = 'rgba(15, 23, 42, 0.55)';
         ctx.fillRect(b.offsetX - 5, -37, 10, 2.2);
     }
@@ -2316,7 +2662,7 @@ function drawSkyLantern(l) {
 }
 
 // =========================================================
-// การวาดตัวละคร "พิม" และ "เป๊ปซี่" (พร้อมท่าทางยกมือไหว้)
+// การวาดตัวละคร "พิม" และ "เป๊ปซี่"
 // =========================================================
 function drawPim(p) {
     const bounce = (p.isPraying || rideState.active) ? 2 : Math.abs(Math.sin(p.walkCycle)) * 4;
@@ -2397,7 +2743,6 @@ function drawPim(p) {
     ctx.fill();
 
     if (p.isPraying) {
-        // วงแสงออร่าสีทองชมพูละมุนรอบตัวตอนยกมือไหว้
         const aura = ctx.createRadialGradient(0, -35, 4, 0, -35, 36);
         aura.addColorStop(0, 'rgba(253, 224, 71, 0.45)');
         aura.addColorStop(0.6, 'rgba(244, 114, 182, 0.2)');
@@ -2407,7 +2752,6 @@ function drawPim(p) {
         ctx.arc(0, -35, 36, 0, Math.PI * 2);
         ctx.fill();
 
-        // แขนยกขึ้นพนมมือระดับอกอย่างอ่อนช้อย
         ctx.strokeStyle = '#fbcfe8';
         ctx.lineWidth = 4;
         ctx.lineCap = 'round';
@@ -2418,7 +2762,6 @@ function drawPim(p) {
         ctx.quadraticCurveTo(5, -31, 1.5, -34);
         ctx.stroke();
 
-        // วาดมือพนมเรียวสวยสีเนื้อ
         ctx.fillStyle = '#fde6d8';
         ctx.strokeStyle = '#f472b6';
         ctx.lineWidth = 1;
@@ -2495,7 +2838,6 @@ function drawPepsi(p) {
     ctx.stroke();
 
     if (p.isPraying) {
-        // วงแสงออร่าสีทองอบอุ่นรอบตัวเป๊ปซี่ตอนยกมือไหว้
         const aura = ctx.createRadialGradient(0, -37, 4, 0, -37, 38);
         aura.addColorStop(0, 'rgba(253, 224, 71, 0.45)');
         aura.addColorStop(0.6, 'rgba(56, 189, 248, 0.18)');
@@ -2505,7 +2847,6 @@ function drawPepsi(p) {
         ctx.arc(0, -37, 38, 0, Math.PI * 2);
         ctx.fill();
 
-        // แขนยกขึ้นพนมมือระดับอก
         ctx.strokeStyle = '#fef3c7';
         ctx.lineWidth = 4.5;
         ctx.lineCap = 'round';
@@ -2516,7 +2857,6 @@ function drawPepsi(p) {
         ctx.quadraticCurveTo(5, -32, 1.5, -35);
         ctx.stroke();
 
-        // วาดมือพนมสีเนื้อ
         ctx.fillStyle = '#f6d5c3';
         ctx.strokeStyle = '#f59e0b';
         ctx.lineWidth = 1;
@@ -2563,7 +2903,6 @@ function drawSpeechBubble(text, yOffset, bgColor, textColor) {
     const padX = 12;
     const maxLineW = maxBubbleW - padX * 2;
 
-    // ตัดแบ่งข้อความภาษาไทยเป็น 1-2 บรรทัดอัตโนมัติ ไม่โดนตัดคำ ...
     const lines = [];
     let currentLine = '';
     for (const ch of Array.from(text)) {
@@ -2594,7 +2933,6 @@ function drawSpeechBubble(text, yOffset, bgColor, textColor) {
     ctx.fill();
     ctx.shadowBlur = 0;
 
-    // หางกล่องข้อความชี้ลงที่ตัวละคร
     ctx.beginPath();
     ctx.moveTo(-5, topY + boxH);
     ctx.lineTo(5, topY + boxH);
@@ -2610,9 +2948,6 @@ function drawSpeechBubble(text, yOffset, bgColor, textColor) {
     ctx.restore();
 }
 
-// =========================================================
-// จัดการขนาดหน้าจอและเริ่ม Loop เกม
-// =========================================================
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
