@@ -1648,8 +1648,8 @@ function updateInteractButton(target) {
     const sub = document.getElementById('interactSub');
 
     if (rideState.active) {
+        btn.classList.remove('opacity-100', 'btn-glow');
         btn.classList.add('opacity-40', 'pointer-events-none');
-        btn.classList.remove('btn-glow');
         icon.textContent = rideState.type === 'ferris' ? '🎡' : '🎠';
         title.textContent = 'กำลังเล่นเครื่องเล่น';
         sub.textContent = 'ชมวิวงานวัดกับเป๊ปซี่...';
@@ -1657,8 +1657,8 @@ function updateInteractButton(target) {
     }
 
     if (target) {
-        btn.classList.remove('opacity-40', 'pointer-events-none');
-        btn.classList.add('btn-glow');
+        btn.classList.remove('opacity-40', 'opacity-50', 'pointer-events-none');
+        btn.classList.add('opacity-100', 'btn-glow');
         icon.textContent = target.icon;
         if (target.id === 'pier') {
             if (pim.heldItem && pim.heldItem.kind === 'krathong') {
@@ -1682,8 +1682,8 @@ function updateInteractButton(target) {
             sub.textContent = target.sub;
         }
     } else {
+        btn.classList.remove('opacity-100', 'btn-glow');
         btn.classList.add('opacity-40', 'pointer-events-none');
-        btn.classList.remove('btn-glow');
         icon.textContent = '👆';
         title.textContent = 'แตะพื้นเพื่อเดิน';
         sub.textContent = 'เดินไปใกล้ร้านค้าหรือท่าน้ำ';
