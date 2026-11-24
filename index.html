@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Mali:wght@400;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Mali:wght@500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body class="relative w-full h-full overflow-hidden text-white">
@@ -15,156 +15,168 @@
     <!-- ฉากเกม 2D -->
     <canvas id="gameCanvas"></canvas>
 
-    <!-- แถบสถานะด้านบน -->
-    <div id="topHud" class="hidden fixed top-0 left-0 right-0 z-20 p-3 flex justify-between items-start pointer-events-none">
-        <div class="glass-panel rounded-2xl px-3.5 py-2 flex items-center gap-2.5 shadow-lg pointer-events-auto">
-            <div class="w-9 h-9 rounded-full bg-gradient-to-tr from-pink-500 to-amber-400 flex items-center justify-center text-lg shadow-inner">🪷</div>
-            <div>
-                <div class="text-xs text-amber-300 font-medium leading-tight">งานลอยกระทงคืนวันเพ็ญ</div>
-                <div id="heldItemDisplay" class="text-sm font-semibold text-white flex items-center gap-1">
-                    <span>มือว่าง (เดินเที่ยวงาน)</span>
+    <!-- แถบสถานะด้านบน (กะทัดรัดพอดีมือถือแนวตั้ง) -->
+    <div id="topHud" class="hidden fixed top-0 left-0 right-0 z-20 px-3 pt-3 flex justify-between items-center gap-2 pointer-events-none">
+        <div class="glass-panel rounded-2xl px-2.5 py-1.5 flex items-center gap-2 shadow-lg pointer-events-auto min-w-0 flex-1 max-w-[60vw]">
+            <div class="w-8 h-8 rounded-xl bg-gradient-to-br from-pink-500 via-rose-500 to-amber-400 flex items-center justify-center text-base shadow-inner shrink-0 border border-white/25">🪷</div>
+            <div class="min-w-0">
+                <div class="text-[10px] text-amber-300/90 font-medium leading-tight truncate">คืนวันเพ็ญ • พิม ❤️ เป๊ปซี่</div>
+                <div id="heldItemDisplay" class="text-xs font-semibold text-white truncate">
+                    <span>ช่อง 1: มือว่าง</span>
                 </div>
             </div>
         </div>
 
-        <div class="flex items-center gap-2 pointer-events-auto">
-            <button id="btnMemories" onclick="openMemoriesModal()" class="glass-panel rounded-full p-2.5 text-amber-300 hover:text-white active:scale-95 transition shadow-lg relative" title="บันทึกคำอธิษฐาน">
-                ❤️
-                <span id="wishBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">1</span>
+        <div class="flex items-center gap-1.5 pointer-events-auto shrink-0">
+            <button id="btnMemories" onclick="openMemoriesModal()" class="glass-panel w-9 h-9 rounded-xl flex items-center justify-center text-amber-300 hover:text-white active:scale-95 transition shadow-lg relative" title="บันทึกคำอธิษฐาน">
+                <span class="text-base">💌</span>
+                <span id="wishBadge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow">1</span>
             </button>
-            <button onclick="triggerCelebrationFireworks()" class="glass-panel rounded-full p-2.5 text-amber-300 hover:text-white active:scale-95 transition shadow-lg" title="จุดพลุฉลอง">
-                🎆
+            <button onclick="triggerCelebrationFireworks()" class="glass-panel w-9 h-9 rounded-xl flex items-center justify-center text-amber-300 hover:text-white active:scale-95 transition shadow-lg" title="จุดพลุฉลอง">
+                <span class="text-base">🎆</span>
             </button>
-            <button id="btnAudio" onclick="openMusicModal()" class="glass-panel rounded-full px-3 py-2 text-amber-300 hover:text-white active:scale-95 transition shadow-lg flex items-center gap-1.5 text-xs font-semibold" title="เลือกเพลงพื้นหลังและปรับระดับเสียง">
-                <span id="audioIcon" class="text-base">🎶</span>
-                <span id="currentSongHudName" class="hidden sm:inline max-w-[110px] truncate">เพลงที่ 1</span>
+            <button id="btnAudio" onclick="openMusicModal()" class="glass-panel h-9 rounded-xl px-2.5 text-amber-300 hover:text-white active:scale-95 transition shadow-lg flex items-center gap-1 text-xs font-semibold" title="เลือกเพลงและปรับเสียง">
+                <span id="audioIcon" class="text-base">🎵</span>
+                <span id="currentSongHudName" class="text-[11px] text-amber-100">เพลง 1</span>
             </button>
         </div>
     </div>
 
-    <!-- ช่องเก็บของ 5 ช่องสี่เหลี่ยมตรงกลางล่าง (แยกชั้นบนมือถือแนวตั้งไม่ให้ทับปุ่ม) -->
-    <div id="inventoryWrapper" class="hidden fixed bottom-[122px] sm:bottom-3 left-1/2 transform -translate-x-1/2 z-20 pointer-events-auto">
-        <div class="glass-panel rounded-2xl p-1.5 sm:p-2 flex items-center gap-1.5 sm:gap-2 shadow-2xl border border-amber-300/50">
-            <button id="invSlot0" onclick="selectInventorySlot(0)" class="inv-slot w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/10 border-2 border-amber-300 flex flex-col items-center justify-center relative transition active:scale-95"></button>
-            <button id="invSlot1" onclick="selectInventorySlot(1)" class="inv-slot w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/5 border border-white/20 flex flex-col items-center justify-center relative transition active:scale-95"></button>
-            <button id="invSlot2" onclick="selectInventorySlot(2)" class="inv-slot w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/5 border border-white/20 flex flex-col items-center justify-center relative transition active:scale-95"></button>
-            <button id="invSlot3" onclick="selectInventorySlot(3)" class="inv-slot w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/5 border border-white/20 flex flex-col items-center justify-center relative transition active:scale-95"></button>
-            <button id="invSlot4" onclick="selectInventorySlot(4)" class="inv-slot w-11 h-11 sm:w-12 sm:h-12 rounded-xl bg-white/5 border border-white/20 flex flex-col items-center justify-center relative transition active:scale-95"></button>
+    <!-- แบนเนอร์แจ้งเตือน (รองรับข้อความยาว ตัดบรรทัดสวยไม่ล้นจอมือถือ) -->
+    <div id="toastBanner" class="fixed top-16 left-1/2 transform -translate-x-1/2 z-30 pointer-events-none transition-all duration-300 opacity-0 -translate-y-4 w-[90vw] max-w-[380px]">
+        <div class="glass-panel px-3.5 py-2 rounded-2xl shadow-xl border border-amber-300/50 flex items-center justify-center gap-2 text-xs text-amber-100 text-center leading-snug">
+            <span id="toastIcon" class="text-base shrink-0">✨</span>
+            <span id="toastText" class="break-words">ข้อความ</span>
         </div>
     </div>
 
-    <!-- ปุ่มบังคับบนมือถือ -->
-    <div id="touchControls" class="hidden fixed bottom-0 left-0 right-0 z-20 p-3 sm:p-5 flex justify-between items-end pointer-events-none">
-        <!-- จอยสติ๊กฝั่งซ้าย -->
-        <div id="joystickZone" class="w-24 h-24 sm:w-32 sm:h-32 rounded-full bg-white/10 border-2 border-amber-300/30 backdrop-blur-sm relative flex items-center justify-center pointer-events-auto touch-none shadow-xl shrink-0">
-            <div id="joystickKnob" class="w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-gradient-to-br from-amber-300 to-rose-400 shadow-lg border-2 border-white/80"></div>
-            <span class="hidden sm:block absolute -bottom-5 text-[11px] text-amber-200/80 font-medium whitespace-nowrap">เลื่อนเพื่อเดิน / แตะพื้น</span>
-        </div>
+    <!-- แผงควบคุมด้านล่างสำหรับมือถือแนวตั้ง (จิ้มพื้นเดินอย่างเดียว + ปุ่มสวยสมมาตร) -->
+    <div id="bottomHudContainer" class="hidden fixed bottom-0 left-0 right-0 z-20 px-3 pb-3 pt-1.5 flex flex-col items-center gap-2 pointer-events-none">
+        
+        <!-- ปุ่มปล่อยโคมลอย (แสดงเมื่อเลือกถือโคมไฟ/โคมลอย) -->
+        <button id="btnReleaseLantern" onclick="releaseSkyLantern()" class="hidden pointer-events-auto w-full max-w-[390px] py-2.5 px-4 rounded-2xl bg-gradient-to-r from-orange-500 via-amber-500 to-yellow-400 text-indigo-950 font-bold text-xs shadow-xl border border-amber-100 active:scale-95 transition flex items-center justify-center gap-2 btn-glow">
+            <span class="text-base">🏮</span>
+            <span>ปล่อยโคมลอยขึ้นฟ้าตรงนี้เลย ✨</span>
+        </button>
 
-        <!-- ปุ่มกดโต้ตอบ + ปุ่มยกมือไหว้คู่กัน ฝั่งขวา -->
-        <div id="rightActionStack" class="flex flex-col items-end gap-2 sm:gap-2.5 pointer-events-auto">
-            <!-- ปุ่มปล่อยโคมลอย (แสดงเมื่อซื้อโคมไฟ/โคมลอยมาถือไว้ ปล่อยตรงที่ยืนได้เลย) -->
-            <button id="btnReleaseLantern" onclick="releaseSkyLantern()" class="hidden px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl bg-gradient-to-r from-orange-500 to-amber-500 text-white font-bold text-xs sm:text-sm shadow-lg border border-amber-200 active:scale-95 transition flex items-center gap-1.5 sm:gap-2 btn-glow">
-                <span class="text-base sm:text-lg">🏮</span>
-                <span>ปล่อยโคมลอยตรงนี้เลย ✨</span>
-            </button>
-
-            <!-- ปุ่มยกมือไหว้พร้อมกันทั้งพิมและเป๊ปซี่ (ดีไซน์ใหม่สุดละมุน) -->
-            <button id="btnWai" onclick="triggerCoupleWai()" class="btn-wai-fancy group relative overflow-hidden px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-2xl text-white font-semibold text-xs sm:text-sm shadow-xl active:scale-95 transition-all flex items-center gap-2 sm:gap-2.5">
+        <!-- แถวปุ่มปฏิบัติการคู่กัน: ไหว้คู่กัน + โต้ตอบร้านค้า/ท่าน้ำ -->
+        <div class="w-full max-w-[390px] grid grid-cols-12 gap-2 pointer-events-auto">
+            <!-- ปุ่มยกมือไหว้คู่กัน -->
+            <button id="btnWai" onclick="triggerCoupleWai()" class="col-span-5 btn-wai-fancy group relative overflow-hidden px-2.5 py-2.5 rounded-2xl text-white font-semibold shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2">
                 <span class="wai-shimmer"></span>
-                <span class="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-br from-amber-300 via-yellow-400 to-rose-400 flex items-center justify-center shadow-inner text-indigo-950 shrink-0 group-hover:scale-110 transition-transform">
-                    <svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="currentColor">
+                <span class="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-200 via-yellow-400 to-rose-400 flex items-center justify-center shadow-inner text-indigo-950 shrink-0 group-hover:scale-105 transition-transform">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M12 2.5c-.6 0-1.1.4-1.3 1L8.1 11.4c-.3.9-.9 1.6-1.7 2.1l-2.1 1.3c-.7.4-.9 1.3-.5 2l1.1 1.8c.4.7 1.3.9 2 .5l3.6-2.1c.6-.4 1-.9 1.2-1.6l.3-1.2V4.2c0-.9-.7-1.7-1.6-1.7zm1.6 1.7v10l.3 1.2c.2.7.6 1.2 1.2 1.6l3.6 2.1c.7.4 1.6.2 2-.5l1.1-1.8c.4-.7.2-1.6-.5-2l-2.1-1.3c-.8-.5-1.4-1.2-1.7-2.1L14.9 3.5c-.2-.6-.7-1-1.3-1-.9 0-1.6.8-1.6 1.7z"/>
                     </svg>
                 </span>
-                <div class="text-left leading-tight relative z-10">
-                    <div class="text-amber-100 font-bold tracking-wide text-xs sm:text-sm flex items-center gap-1">
-                        <span>ยกมือไหว้คู่กัน</span>
-                        <span class="text-pink-300 text-xs">✨</span>
-                    </div>
-                    <div class="text-[10px] text-amber-200/80 font-normal">พิม ❤️ เป๊ปซี่</div>
+                <div class="text-left leading-tight relative z-10 min-w-0">
+                    <div class="text-amber-100 font-bold text-xs truncate">ไหว้คู่กัน</div>
+                    <div class="text-[10px] text-pink-200/90 font-normal truncate">พิม ❤️ เป๊ปซี่</div>
                 </div>
             </button>
 
             <!-- ปุ่มกดโต้ตอบร้านค้า/เครื่องเล่น/ท่าน้ำ -->
-            <button id="btnInteract" onclick="handleInteract()" class="max-w-[215px] sm:max-w-none px-3.5 py-2.5 sm:px-5 sm:py-3.5 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold text-sm sm:text-base shadow-2xl border-2 border-amber-200/80 active:scale-95 transition-all flex items-center gap-2 sm:gap-2.5 opacity-40 pointer-events-none">
-                <span id="interactIcon" class="text-xl sm:text-2xl shrink-0">✨</span>
-                <div class="text-left min-w-0">
-                    <div id="interactTitle" class="leading-tight truncate">เดินเที่ยวงาน</div>
-                    <div id="interactSub" class="text-[10px] sm:text-[11px] font-normal text-amber-100 truncate">เดินไปใกล้ร้านค้าหรือท่าน้ำ</div>
+            <button id="btnInteract" onclick="handleInteract()" class="col-span-7 px-3 py-2.5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold shadow-2xl border border-amber-200/80 active:scale-95 transition-all flex items-center gap-2 opacity-50 pointer-events-none">
+                <span id="interactIcon" class="w-8 h-8 rounded-xl bg-white/15 flex items-center justify-center text-lg shrink-0">👆</span>
+                <div class="text-left min-w-0 flex-1">
+                    <div id="interactTitle" class="text-xs leading-tight truncate">แตะบนพื้นเพื่อเดิน</div>
+                    <div id="interactSub" class="text-[10px] font-normal text-amber-100/90 truncate">เดินไปใกล้ร้านค้าหรือท่าน้ำ</div>
                 </div>
             </button>
+        </div>
+
+        <!-- ช่องเก็บของ 5 ช่องสี่เหลี่ยมเรียงสวยด้านล่างสุด -->
+        <div id="inventoryWrapper" class="w-full max-w-[390px] pointer-events-auto">
+            <div class="glass-panel rounded-2xl p-1.5 grid grid-cols-5 gap-1.5 shadow-2xl border border-amber-300/45">
+                <button id="invSlot0" onclick="selectInventorySlot(0)" class="inv-slot h-14 py-1 rounded-xl bg-white/10 border border-white/20 flex flex-col items-center justify-center relative transition active:scale-95"></button>
+                <button id="invSlot1" onclick="selectInventorySlot(1)" class="inv-slot h-14 py-1 rounded-xl bg-white/5 border border-white/20 flex flex-col items-center justify-center relative transition active:scale-95"></button>
+                <button id="invSlot2" onclick="selectInventorySlot(2)" class="inv-slot h-14 py-1 rounded-xl bg-white/5 border border-white/20 flex flex-col items-center justify-center relative transition active:scale-95"></button>
+                <button id="invSlot3" onclick="selectInventorySlot(3)" class="inv-slot h-14 py-1 rounded-xl bg-white/5 border border-white/20 flex flex-col items-center justify-center relative transition active:scale-95"></button>
+                <button id="invSlot4" onclick="selectInventorySlot(4)" class="inv-slot h-14 py-1 rounded-xl bg-white/5 border border-white/20 flex flex-col items-center justify-center relative transition active:scale-95"></button>
+            </div>
         </div>
     </div>
 
     <!-- หน้าจอต้อนรับ -->
-    <div id="startScreen" class="fixed inset-0 z-40 flex flex-col items-center justify-center p-6 bg-gradient-to-b from-[#090d1f]/80 via-[#15193b]/85 to-[#090d1f]/90 backdrop-blur-sm text-center">
-        <div class="max-w-md w-full glass-panel rounded-3xl p-7 shadow-2xl border border-amber-400/40 relative overflow-hidden">
+    <div id="startScreen" class="fixed inset-0 z-40 flex flex-col items-center justify-center p-4 bg-gradient-to-b from-[#090d1f]/85 via-[#15193b]/90 to-[#090d1f]/95 backdrop-blur-sm text-center">
+        <div class="max-w-sm w-full glass-panel rounded-3xl p-6 shadow-2xl border border-amber-400/45 relative overflow-hidden">
+            <div class="inline-flex items-center justify-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-400/15 border border-amber-300/35 text-xs text-amber-200 mb-3">
+                <span>🌕</span><span>คืนวันเพ็ญ เดือนสิบสอง</span>
+            </div>
             <div class="text-5xl mb-3 animate-float">🪷🏮🎡</div>
-            <h1 class="text-2xl sm:text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-rose-300 font-mali mb-2">
+            <h1 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-rose-300 font-mali mb-2">
                 ลอยกระทงคืนนี้...กับเป๊ปซี่
             </h1>
-            <p class="text-amber-100/90 text-sm sm:text-base mb-5 leading-relaxed">
-                ยินดีต้อนรับ <span class="text-pink-300 font-semibold">"พิม"</span> สู่งานลอยกระทงริมน้ำ<br>
-                เดินเที่ยวร้านของกิน ซื้อโคมไฟปล่อยขึ้นฟ้า ทำบุญปล่อยปลา และลอยกระทงด้วยกันนะ ❤️
+            <p class="text-amber-100/90 text-xs leading-relaxed mb-4">
+                ยินดีต้อนรับ <span class="text-pink-300 font-semibold">"พิม"</span> สู่งานวัดริมแม่น้ำเจ้าพระยา<br>
+                เดินเที่ยวร้านของกิน ปล่อยโคมลอย ทำบุญปล่อยปลา และลอยกระทงด้วยกันนะ ❤️
             </p>
-            <div class="bg-white/5 rounded-2xl p-3.5 mb-6 text-left text-xs text-amber-200/90 space-y-1.5 border border-white/10">
-                <div class="flex items-center gap-2"><span>🕹️</span> <span>ใช้จอยสติ๊กซ้ายล่าง หรือ <b>แตะบนพื้น</b> เพื่อเดิน (เป๊ปซี่เดินตามตลอด)</span></div>
-                <div class="flex items-center gap-2"><span>🏮</span> <span>แวะ <b>ร้านขายโคมไฟและโคมลอย</b> เลือกสีโคมแล้วกดปล่อยขึ้นฟ้าจากจุดที่ยืนได้เลย</span></div>
-                <div class="flex items-center gap-2"><span>🙏</span> <span>กดปุ่ม <b>ยกมือไหว้คู่กัน</b> และแวะท่าน้ำลอยกระทงอธิษฐานร่วมกัน</span></div>
+            <div class="bg-white/5 rounded-2xl p-3.5 mb-5 text-left text-xs text-amber-100/90 space-y-2.5 border border-white/10">
+                <div class="flex items-start gap-2.5">
+                    <span class="w-6 h-6 rounded-lg bg-amber-400/20 flex items-center justify-center shrink-0">👆</span>
+                    <span><b>จิ้มบนพื้นตรงไหนก็ได้</b> เพื่อเดินเที่ยว (เป๊ปซี่เดินตามข้างๆ ตลอด)</span>
+                </div>
+                <div class="flex items-start gap-2.5">
+                    <span class="w-6 h-6 rounded-lg bg-orange-400/20 flex items-center justify-center shrink-0">🏮</span>
+                    <span>แวะ <b>ร้านโคมไฟและโคมลอย</b> เลือกโคมแล้วกดปล่อยขึ้นฟ้าได้เลย</span>
+                </div>
+                <div class="flex items-start gap-2.5">
+                    <span class="w-6 h-6 rounded-lg bg-pink-400/20 flex items-center justify-center shrink-0">🙏</span>
+                    <span>กดปุ่ม <b>ไหว้คู่กัน</b> และแวะท่าน้ำลอยกระทงอธิษฐานร่วมกัน</span>
+                </div>
             </div>
-            <button onclick="startGame()" class="w-full py-4 px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold text-lg shadow-xl border border-amber-200 active:scale-95 transition btn-glow">
+            <button onclick="startGame()" class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-amber-500 text-white font-bold text-base shadow-xl border border-amber-200 active:scale-95 transition btn-glow">
                 เริ่มเที่ยวงานกับเป๊ปซี่ ❤️
             </button>
         </div>
     </div>
 
-    <!-- หน้าต่าง Modal ทั้งหมด -->
-    <div id="modalBackdrop" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
+    <!-- หน้าต่าง Modal ทั้งหมด (ปรับขนาดพอดีมือถือแนวตั้ง เลื่อนขึ้นลงได้ไม่ล้นจอ) -->
+    <div id="modalBackdrop" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3.5 bg-black/75 backdrop-blur-sm">
         
-        <!-- 1. ร้านขายกระทง (วัสดุธรรมชาติย่อยสลายง่าย) -->
-        <div id="modalKrathongShop" class="hidden max-w-md w-full glass-panel rounded-3xl p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-3">
+        <!-- 1. ร้านขายกระทง -->
+        <div id="modalKrathongShop" class="hidden max-w-sm w-full max-h-[86vh] overflow-y-auto glass-panel rounded-3xl p-5 shadow-2xl">
+            <div class="flex justify-between items-start gap-2 mb-3">
                 <div>
-                    <h2 class="text-xl font-bold text-amber-300 font-mali">🪷 ร้านขายกระทง</h2>
-                    <p class="text-xs text-amber-100/80">กระทงวัสดุธรรมชาติย่อยสลายง่าย เลือกแต่งตามใจพิมเลย</p>
+                    <h2 class="text-lg font-bold text-amber-300 font-mali">🪷 ร้านขายกระทง</h2>
+                    <p class="text-[11px] text-amber-100/80">กระทงวัสดุธรรมชาติย่อยสลายง่าย แต่งตามใจพิมเลย</p>
                 </div>
-                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:text-white">✕</button>
+                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/80 hover:text-white shrink-0">✕</button>
             </div>
 
-            <div class="flex flex-col items-center justify-center bg-gradient-to-b from-indigo-950/80 to-blue-950/80 rounded-2xl p-3 mb-3.5 border border-amber-300/30">
-                <canvas id="krathongPreviewCanvas" width="160" height="105"></canvas>
+            <div class="flex flex-col items-center justify-center bg-gradient-to-b from-indigo-950/85 to-blue-950/85 rounded-2xl p-2.5 mb-3 border border-amber-300/30">
+                <canvas id="krathongPreviewCanvas" width="160" height="96"></canvas>
                 <div id="previewKrathongLabel" class="text-xs text-amber-200 font-semibold mt-1">กระทงใบตอง + ดอกบัวชมพู</div>
             </div>
 
             <div class="text-xs text-amber-300 font-semibold mb-1.5">1. เลือกประเภทกระทง:</div>
             <div class="grid grid-cols-2 gap-2 mb-3">
-                <button id="base-banana" onclick="setKrathongBase('banana', 'กระทงใบตอง', '🪷')" class="glass-card rounded-xl p-2.5 text-left flex items-center gap-2 border-amber-300 bg-amber-400/20">
-                    <span class="text-2xl">🪷</span>
-                    <div>
-                        <div class="font-semibold text-xs text-amber-200">กระทงใบตอง</div>
-                        <div class="text-[10px] text-white/70">จีบกลีบใบตองธรรมชาติ</div>
+                <button id="base-banana" onclick="setKrathongBase('banana', 'กระทงใบตอง', '🪷')" class="glass-card rounded-xl p-2 text-left flex items-center gap-2 border-amber-300 bg-amber-400/20">
+                    <span class="text-2xl shrink-0">🪷</span>
+                    <div class="min-w-0">
+                        <div class="font-semibold text-xs text-amber-200 truncate">กระทงใบตอง</div>
+                        <div class="text-[10px] text-white/70 truncate">กลีบใบตองธรรมชาติ</div>
                     </div>
                 </button>
-                <button id="base-lotus" onclick="setKrathongBase('lotus', 'กระทงดอกไม้', '🌸')" class="glass-card rounded-xl p-2.5 text-left flex items-center gap-2">
-                    <span class="text-2xl">🌸</span>
-                    <div>
-                        <div class="font-semibold text-xs text-pink-300">กระทงดอกไม้</div>
-                        <div class="text-[10px] text-white/70">กลีบบัวสดบานสะพรั่ง</div>
+                <button id="base-lotus" onclick="setKrathongBase('lotus', 'กระทงดอกไม้', '🌸')" class="glass-card rounded-xl p-2 text-left flex items-center gap-2">
+                    <span class="text-2xl shrink-0">🌸</span>
+                    <div class="min-w-0">
+                        <div class="font-semibold text-xs text-pink-300 truncate">กระทงดอกไม้</div>
+                        <div class="text-[10px] text-white/70 truncate">กลีบบัวสดบานสะพรั่ง</div>
                     </div>
                 </button>
-                <button id="base-bread" onclick="setKrathongBase('bread', 'กระทงขนมปัง', '🍞')" class="glass-card rounded-xl p-2.5 text-left flex items-center gap-2">
-                    <span class="text-2xl">💖</span>
-                    <div>
-                        <div class="font-semibold text-xs text-rose-300">กระทงขนมปัง</div>
-                        <div class="text-[10px] text-white/70">รูปหัวใจเป็นอาหารปลาได้</div>
+                <button id="base-bread" onclick="setKrathongBase('bread', 'กระทงขนมปัง', '🍞')" class="glass-card rounded-xl p-2 text-left flex items-center gap-2">
+                    <span class="text-2xl shrink-0">💖</span>
+                    <div class="min-w-0">
+                        <div class="font-semibold text-xs text-rose-300 truncate">กระทงขนมปัง</div>
+                        <div class="text-[10px] text-white/70 truncate">เป็นอาหารปลาได้</div>
                     </div>
                 </button>
-                <button id="base-ice" onclick="setKrathongBase('ice', 'กระทงน้ำแข็ง', '🧊')" class="glass-card rounded-xl p-2.5 text-left flex items-center gap-2">
-                    <span class="text-2xl">🧊</span>
-                    <div>
-                        <div class="font-semibold text-xs text-sky-300">กระทงน้ำแข็ง</div>
-                        <div class="text-[10px] text-white/70">ละลายไปกับน้ำไม่เหลือขยะ</div>
+                <button id="base-ice" onclick="setKrathongBase('ice', 'กระทงน้ำแข็ง', '🧊')" class="glass-card rounded-xl p-2 text-left flex items-center gap-2">
+                    <span class="text-2xl shrink-0">🧊</span>
+                    <div class="min-w-0">
+                        <div class="font-semibold text-xs text-sky-300 truncate">กระทงน้ำแข็ง</div>
+                        <div class="text-[10px] text-white/70 truncate">ละลายไม่เหลือขยะ</div>
                     </div>
                 </button>
             </div>
@@ -176,107 +188,107 @@
                 <button id="deco-rose" onclick="setKrathongDeco('rose', 'ดอกกุหลาบ')" class="glass-card rounded-xl py-2 px-1 text-center text-xs">🌹 กุหลาบ</button>
             </div>
 
-            <button onclick="confirmSelectKrathong()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-bold shadow-lg active:scale-95 transition">
+            <button onclick="confirmSelectKrathong()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-amber-500 to-rose-500 text-white font-bold text-sm shadow-lg active:scale-95 transition">
                 รับกระทงใบนี้ไปลอยกับเป๊ปซี่ ❤️
             </button>
         </div>
 
-        <!-- 2. ร้านขายโคมไฟและโคมลอย -->
-        <div id="modalLanternShop" class="hidden max-w-md w-full glass-panel rounded-3xl p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-3">
+        <!-- 2. ร้านโคมไฟและโคมลอย -->
+        <div id="modalLanternShop" class="hidden max-w-sm w-full max-h-[86vh] overflow-y-auto glass-panel rounded-3xl p-5 shadow-2xl">
+            <div class="flex justify-between items-start gap-2 mb-3">
                 <div>
-                    <h2 class="text-xl font-bold text-amber-300 font-mali">🏮 ร้านขายโคมไฟและโคมลอย</h2>
-                    <p class="text-xs text-amber-100/80">เลือกโคมไฟสวยๆ แล้วปล่อยขึ้นฟ้าจากตรงที่ยืนได้เลย!</p>
+                    <h2 class="text-lg font-bold text-amber-300 font-mali">🏮 ร้านโคมไฟและโคมลอย</h2>
+                    <p class="text-[11px] text-amber-100/80">เลือกโคมสวยๆ แล้วกดปล่อยขึ้นฟ้าจากจุดที่ยืนได้เลย</p>
                 </div>
-                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70">✕</button>
+                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/80 shrink-0">✕</button>
             </div>
             <div class="grid grid-cols-2 gap-2.5">
-                <button onclick="pickLanternItem('โคมลอยสีทองมงคล', '#fb923c', '#fef08a', '🏮')" class="glass-card rounded-2xl p-3.5 text-center">
+                <button onclick="pickLanternItem('โคมลอยสีทองมงคล', '#fb923c', '#fef08a', '🏮')" class="glass-card rounded-2xl p-3 text-center">
                     <div class="text-3xl mb-1">🏮</div>
-                    <div class="font-semibold text-xs text-amber-300">โคมลอยสีทองมงคล</div>
-                    <div class="text-[10px] text-white/70 mt-0.5">สว่างไสวอบอุ่นกลางคืนวันเพ็ญ</div>
+                    <div class="font-semibold text-xs text-amber-300">โคมลอยสีทอง</div>
+                    <div class="text-[10px] text-white/70 mt-0.5 leading-tight">สว่างไสวคืนวันเพ็ญ</div>
                 </button>
-                <button onclick="pickLanternItem('โคมลอยหัวใจสีชมพู', '#f43f5e', '#fbcfe8', '❤️')" class="glass-card rounded-2xl p-3.5 text-center">
+                <button onclick="pickLanternItem('โคมลอยหัวใจสีชมพู', '#f43f5e', '#fbcfe8', '❤️')" class="glass-card rounded-2xl p-3 text-center">
                     <div class="text-3xl mb-1">❤️</div>
-                    <div class="font-semibold text-xs text-pink-300">โคมลอยหัวใจสีชมพู</div>
-                    <div class="text-[10px] text-white/70 mt-0.5">โคมคู่รักสุดโรแมนติกของพิมกับเป๊ปซี่</div>
+                    <div class="font-semibold text-xs text-pink-300">โคมหัวใจชมพู</div>
+                    <div class="text-[10px] text-white/70 mt-0.5 leading-tight">โคมคู่รักพิมกับเป๊ปซี่</div>
                 </button>
-                <button onclick="pickLanternItem('โคมยี่เป็งล้านนาหลากสี', '#a855f7', '#fde047', '🪔')" class="glass-card rounded-2xl p-3.5 text-center">
+                <button onclick="pickLanternItem('โคมยี่เป็งล้านนา', '#a855f7', '#fde047', '🪔')" class="glass-card rounded-2xl p-3 text-center">
                     <div class="text-3xl mb-1">🪔</div>
                     <div class="font-semibold text-xs text-purple-300">โคมยี่เป็งล้านนา</div>
-                    <div class="text-[10px] text-white/70 mt-0.5">ลอยสูงขึ้นฟ้าสวยงามตระการตา</div>
+                    <div class="text-[10px] text-white/70 mt-0.5 leading-tight">ลอยสูงสวยงามตระการตา</div>
                 </button>
-                <button onclick="pickLanternItem('โคมไฟดวงดาวสีฟ้า', '#38bdf8', '#e0f2fe', '✨')" class="glass-card rounded-2xl p-3.5 text-center">
+                <button onclick="pickLanternItem('โคมไฟดวงดาวสีฟ้า', '#38bdf8', '#e0f2fe', '✨')" class="glass-card rounded-2xl p-3 text-center">
                     <div class="text-3xl mb-1">✨</div>
-                    <div class="font-semibold text-xs text-sky-300">โคมไฟดวงดาวสีฟ้า</div>
-                    <div class="text-[10px] text-white/70 mt-0.5">เปล่งประกายเคียงคู่พระจันทร์เต็มดวง</div>
+                    <div class="font-semibold text-xs text-sky-300">โคมดวงดาวสีฟ้า</div>
+                    <div class="text-[10px] text-white/70 mt-0.5 leading-tight">เคียงคู่พระจันทร์เต็มดวง</div>
                 </button>
             </div>
         </div>
 
-        <!-- 3. ร้านขายสัตว์ทำบุญปล่อยชีวิต (นก ปลา หนู เต่า หอย กบ) -->
-        <div id="modalAnimalShop" class="hidden max-w-md w-full glass-panel rounded-3xl p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-3">
+        <!-- 3. ร้านปล่อยสัตว์ทำบุญ -->
+        <div id="modalAnimalShop" class="hidden max-w-sm w-full max-h-[86vh] overflow-y-auto glass-panel rounded-3xl p-5 shadow-2xl">
+            <div class="flex justify-between items-start gap-2 mb-3">
                 <div>
-                    <h2 class="text-xl font-bold text-amber-300 font-mali">🐟 ร้านขายสัตว์ทำบุญปล่อยชีวิต</h2>
-                    <p class="text-xs text-amber-100/80">เลือกสัตว์ที่จะนำไปปล่อยทำบุญสะเดาะเคราะห์กับเป๊ปซี่</p>
+                    <h2 class="text-lg font-bold text-amber-300 font-mali">🐟 ร้านปล่อยสัตว์ทำบุญ</h2>
+                    <p class="text-[11px] text-amber-100/80">เลือกสัตว์ที่ต้องการนำไปปล่อยทำบุญริมน้ำกับเป๊ปซี่</p>
                 </div>
-                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70">✕</button>
+                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/80 shrink-0">✕</button>
             </div>
-            <div class="grid grid-cols-2 gap-2.5">
-                <button onclick="selectReleaseAnimal('fish', 'ปลาไหลและปลาหมอ', '🐟', 'ปล่อยปลาให้แคล้วคลาด ราบรื่นในทุกเรื่อง')" class="glass-card rounded-2xl p-3 text-left flex items-center gap-2.5">
-                    <span class="text-3xl">🐟</span>
-                    <div>
-                        <div class="font-semibold text-xs text-sky-300">ปลา (ปลาไหล/ปลาหมอ)</div>
-                        <div class="text-[10px] text-white/70">ปล่อยลงแม่น้ำให้ชีวิตลื่นไหล</div>
+            <div class="grid grid-cols-2 gap-2">
+                <button onclick="selectReleaseAnimal('fish', 'ปลาไหลและปลาหมอ', '🐟', 'ปล่อยปลาให้แคล้วคลาด ราบรื่นในทุกเรื่อง')" class="glass-card rounded-2xl p-2.5 text-left flex items-center gap-2">
+                    <span class="text-2xl shrink-0">🐟</span>
+                    <div class="min-w-0">
+                        <div class="font-semibold text-xs text-sky-300 truncate">ปลาไหล/ปลาหมอ</div>
+                        <div class="text-[10px] text-white/70 truncate">ชีวิตลื่นไหลราบรื่น</div>
                     </div>
                 </button>
-                <button onclick="selectReleaseAnimal('bird', 'นกกระจาบคู่', '🕊️', 'ปล่อยนกให้มีอิสระและพบเจอแต่เรื่องดีๆ')" class="glass-card rounded-2xl p-3 text-left flex items-center gap-2.5">
-                    <span class="text-3xl">🕊️</span>
-                    <div>
-                        <div class="font-semibold text-xs text-amber-200">นก (นกกระจาบคู่)</div>
-                        <div class="text-[10px] text-white/70">ปล่อยโบยบินสู่ท้องฟ้ากว้าง</div>
+                <button onclick="selectReleaseAnimal('bird', 'นกกระจาบคู่', '🕊️', 'ปล่อยนกให้มีอิสระและพบเจอแต่เรื่องดีๆ')" class="glass-card rounded-2xl p-2.5 text-left flex items-center gap-2">
+                    <span class="text-2xl shrink-0">🕊️</span>
+                    <div class="min-w-0">
+                        <div class="font-semibold text-xs text-amber-200 truncate">นกกระจาบคู่</div>
+                        <div class="text-[10px] text-white/70 truncate">โบยบินสู่ท้องฟ้ากว้าง</div>
                     </div>
                 </button>
-                <button onclick="selectReleaseAnimal('mouse', 'หนูขาวมงคล', '🐭', 'ปล่อยหนูขาวทำบุญร่วมกัน')" class="glass-card rounded-2xl p-3 text-left flex items-center gap-2.5">
-                    <span class="text-3xl">🐭</span>
-                    <div>
-                        <div class="font-semibold text-xs text-pink-300">หนู (หนูขาวมงคล)</div>
-                        <div class="text-[10px] text-white/70">ปล่อยคืนสู่ธรรมชาติริมสวน</div>
+                <button onclick="selectReleaseAnimal('mouse', 'หนูขาวมงคล', '🐭', 'ปล่อยหนูขาวทำบุญร่วมกัน')" class="glass-card rounded-2xl p-2.5 text-left flex items-center gap-2">
+                    <span class="text-2xl shrink-0">🐭</span>
+                    <div class="min-w-0">
+                        <div class="font-semibold text-xs text-pink-300 truncate">หนูขาวมงคล</div>
+                        <div class="text-[10px] text-white/70 truncate">ปล่อยคืนสู่ธรรมชาติ</div>
                     </div>
                 </button>
-                <button onclick="selectReleaseAnimal('turtle', 'เต่าน้อยอายุยืน', '🐢', 'ปล่อยเต่าขอให้สุขภาพแข็งแรงอายุยืนนาน')" class="glass-card rounded-2xl p-3 text-left flex items-center gap-2.5">
-                    <span class="text-3xl">🐢</span>
-                    <div>
-                        <div class="font-semibold text-xs text-emerald-300">เต่า (เต่าน้อย)</div>
-                        <div class="text-[10px] text-white/70">ขอให้รักยืนยาวและสุขภาพดี</div>
+                <button onclick="selectReleaseAnimal('turtle', 'เต่าน้อยอายุยืน', '🐢', 'ปล่อยเต่าขอให้สุขภาพแข็งแรงอายุยืนนาน')" class="glass-card rounded-2xl p-2.5 text-left flex items-center gap-2">
+                    <span class="text-2xl shrink-0">🐢</span>
+                    <div class="min-w-0">
+                        <div class="font-semibold text-xs text-emerald-300 truncate">เต่าน้อยอายุยืน</div>
+                        <div class="text-[10px] text-white/70 truncate">รักยืนยาวสุขภาพดี</div>
                     </div>
                 </button>
-                <button onclick="selectReleaseAnimal('snail', 'หอยขม', '🐚', 'ปล่อยหอยขมทิ้งความขมขื่นให้มีแต่ความสุข')" class="glass-card rounded-2xl p-3 text-left flex items-center gap-2.5">
-                    <span class="text-3xl">🐚</span>
-                    <div>
-                        <div class="font-semibold text-xs text-amber-300">หอยขม</div>
-                        <div class="text-[10px] text-white/70">ทิ้งความทุกข์ขมขื่นในใจ</div>
+                <button onclick="selectReleaseAnimal('snail', 'หอยขม', '🐚', 'ปล่อยหอยขมทิ้งความขมขื่นให้มีแต่ความสุข')" class="glass-card rounded-2xl p-2.5 text-left flex items-center gap-2">
+                    <span class="text-2xl shrink-0">🐚</span>
+                    <div class="min-w-0">
+                        <div class="font-semibold text-xs text-amber-300 truncate">หอยขม</div>
+                        <div class="text-[10px] text-white/70 truncate">ทิ้งความทุกข์ขมขื่น</div>
                     </div>
                 </button>
-                <button onclick="selectReleaseAnimal('frog', 'กบนาคู่', '🐸', 'ปล่อยกบขอให้อุดมสมบูรณ์ร่มเย็น')" class="glass-card rounded-2xl p-3 text-left flex items-center gap-2.5">
-                    <span class="text-3xl">🐸</span>
-                    <div>
-                        <div class="font-semibold text-xs text-lime-300">กบ (กบนาคู่)</div>
-                        <div class="text-[10px] text-white/70">ปล่อยคืนสู่สายน้ำธรรมชาติ</div>
+                <button onclick="selectReleaseAnimal('frog', 'กบนาคู่', '🐸', 'ปล่อยกบขอให้อุดมสมบูรณ์ร่มเย็น')" class="glass-card rounded-2xl p-2.5 text-left flex items-center gap-2">
+                    <span class="text-2xl shrink-0">🐸</span>
+                    <div class="min-w-0">
+                        <div class="font-semibold text-xs text-lime-300 truncate">กบนาคู่</div>
+                        <div class="text-[10px] text-white/70 truncate">อุดมสมบูรณ์ร่มเย็น</div>
                     </div>
                 </button>
             </div>
         </div>
 
-        <!-- 4. ร้านสตรีทฟู้ดและของกินเล่น -->
-        <div id="modalStreetFood" class="hidden max-w-md w-full glass-panel rounded-3xl p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-3">
+        <!-- 4. ร้านสตรีทฟู้ดของกินเล่น -->
+        <div id="modalStreetFood" class="hidden max-w-sm w-full max-h-[86vh] overflow-y-auto glass-panel rounded-3xl p-5 shadow-2xl">
+            <div class="flex justify-between items-start gap-2 mb-3">
                 <div>
-                    <h2 class="text-xl font-bold text-amber-300 font-mali">🍢 ร้านสตรีทฟู้ดและของกินเล่น</h2>
-                    <p class="text-xs text-amber-100/80">เลือกของอร่อยกินเดินเที่ยวงานกับเป๊ปซี่</p>
+                    <h2 class="text-lg font-bold text-amber-300 font-mali">🍢 ร้านสตรีทฟู้ดของกินเล่น</h2>
+                    <p class="text-[11px] text-amber-100/80">เลือกของอร่อยกินเดินเที่ยวงานกับเป๊ปซี่</p>
                 </div>
-                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70">✕</button>
+                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/80 shrink-0">✕</button>
             </div>
             <div class="grid grid-cols-2 gap-2.5">
                 <button onclick="pickFoodItem('ลูกชิ้นปิ้ง', '🍢', 'ลูกชิ้นปิ้งน้ำจิ้มรสเด็ด อร่อยมาก!')" class="glass-card rounded-2xl p-3 text-center">
@@ -299,13 +311,13 @@
         </div>
 
         <!-- 5. ร้านขนมไทยและเครื่องดื่ม -->
-        <div id="modalThaiDessert" class="hidden max-w-md w-full glass-panel rounded-3xl p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-3">
+        <div id="modalThaiDessert" class="hidden max-w-sm w-full max-h-[86vh] overflow-y-auto glass-panel rounded-3xl p-5 shadow-2xl">
+            <div class="flex justify-between items-start gap-2 mb-3">
                 <div>
-                    <h2 class="text-xl font-bold text-amber-300 font-mali">🧋 ร้านขนมไทยและเครื่องดื่ม</h2>
-                    <p class="text-xs text-amber-100/80">เติมความหวานให้คืนลอยกระทงของเราสองคน</p>
+                    <h2 class="text-lg font-bold text-amber-300 font-mali">🧋 ร้านขนมไทยและเครื่องดื่ม</h2>
+                    <p class="text-[11px] text-amber-100/80">เติมความหวานให้คืนลอยกระทงของเราสองคน</p>
                 </div>
-                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70">✕</button>
+                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/80 shrink-0">✕</button>
             </div>
             <div class="grid grid-cols-2 gap-2.5">
                 <button onclick="pickFoodItem('บัวลอยไข่หวาน', '🥣', 'บัวลอยอุ่นๆ หวานละมุนลิ้นเลย')" class="glass-card rounded-2xl p-3 text-center">
@@ -327,168 +339,157 @@
             </div>
         </div>
 
-        <!-- 6. ร้านของใช้ ของเล่น และสินค้าทั่วไป -->
-        <div id="modalSouvenirShop" class="hidden max-w-md w-full glass-panel rounded-3xl p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-3">
+        <!-- 6. ร้านของฝากและของเล่น -->
+        <div id="modalSouvenirShop" class="hidden max-w-sm w-full max-h-[86vh] overflow-y-auto glass-panel rounded-3xl p-5 shadow-2xl">
+            <div class="flex justify-between items-start gap-2 mb-3">
                 <div>
-                    <h2 class="text-xl font-bold text-amber-300 font-mali">🧸 ร้านของใช้ ของเล่น และสินค้าทั่วไป</h2>
-                    <p class="text-xs text-amber-100/80">เลือกของที่ระลึกน่ารักๆ ไว้เป็นที่ระลึกในงานวัด</p>
+                    <h2 class="text-lg font-bold text-amber-300 font-mali">🧸 ร้านของฝากและของเล่น</h2>
+                    <p class="text-[11px] text-amber-100/80">เลือกของที่ระลึกน่ารักๆ ไว้เป็นที่ระลึกในงานวัด</p>
                 </div>
-                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70">✕</button>
+                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/80 shrink-0">✕</button>
             </div>
             <div class="grid grid-cols-2 gap-2.5">
                 <button onclick="pickSouvenirItem('กำไลข้อมือแฮนด์เมดคู่รัก', '📿')" class="glass-card rounded-2xl p-3 text-center">
                     <div class="text-3xl mb-1">📿</div>
-                    <div class="font-semibold text-xs text-amber-200">เครื่องประดับแฮนด์เมด</div>
+                    <div class="font-semibold text-xs text-amber-200">กำไลข้อมือคู่รัก</div>
                 </button>
                 <button onclick="pickSouvenirItem('ปิ่นปักผมดอกไม้ไทย', '🌺')" class="glass-card rounded-2xl p-3 text-center">
                     <div class="text-3xl mb-1">🌺</div>
-                    <div class="font-semibold text-xs text-pink-300">ปิ่นปักผม & สินค้าชุมชน</div>
+                    <div class="font-semibold text-xs text-pink-300">ปิ่นปักผมดอกไม้</div>
                 </button>
                 <button onclick="pickSouvenirItem('กังหันลมของเล่นงานวัด', '🪁')" class="glass-card rounded-2xl p-3 text-center">
                     <div class="text-3xl mb-1">🪁</div>
-                    <div class="font-semibold text-xs text-sky-300">ของเล่นงานวัดโบราณ</div>
+                    <div class="font-semibold text-xs text-sky-300">กังหันลมงานวัด</div>
                 </button>
                 <button onclick="pickSouvenirItem('ตุ๊กตาหมีคู่รัก', '🧸')" class="glass-card rounded-2xl p-3 text-center">
                     <div class="text-3xl mb-1">🧸</div>
-                    <div class="font-semibold text-xs text-rose-300">ตุ๊กตาของขวัญ</div>
+                    <div class="font-semibold text-xs text-rose-300">ตุ๊กตาหมีคู่รัก</div>
                 </button>
             </div>
         </div>
 
         <!-- 7. ซุ้มปาโป่งชิงตุ๊กตา -->
-        <div id="modalBalloonGame" class="hidden max-w-md w-full glass-panel rounded-3xl p-6 shadow-2xl text-center">
+        <div id="modalBalloonGame" class="hidden max-w-sm w-full glass-panel rounded-3xl p-5 shadow-2xl text-center">
             <div class="flex justify-between items-center mb-2">
-                <h2 class="text-xl font-bold text-amber-300 font-mali">🎯 ซุ้มปาโป่งงานวัด</h2>
-                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70">✕</button>
+                <h2 class="text-lg font-bold text-amber-300 font-mali">🎯 ซุ้มปาโป่งงานวัด</h2>
+                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/80">✕</button>
             </div>
-            <p class="text-xs text-amber-100/80 mb-3">แตะที่ลูกโป่งให้แตกครบ 5 ลูก เป๊ปซี่จะคว้ารางวัลใหญ่ให้พิม!</p>
+            <p class="text-xs text-amber-100/80 mb-2.5">จิ้มลูกโป่งให้แตกครบ 5 ลูก เป๊ปซี่จะคว้ารางวัลใหญ่ให้พิม!</p>
             <div class="text-sm font-bold text-pink-300 mb-3">ปาแตกแล้ว: <span id="balloonScore">0</span> / 5 ลูก</div>
-            <div id="balloonBoard" class="grid grid-cols-3 gap-3 bg-white/5 p-4 rounded-2xl border border-amber-300/25 mb-3"></div>
+            <div id="balloonBoard" class="grid grid-cols-3 gap-2.5 bg-white/5 p-3.5 rounded-2xl border border-amber-300/25"></div>
         </div>
 
         <!-- 8. หน้าต่างพิมพ์คำอธิษฐานลอยกระทง -->
-        <div id="modalWish" class="hidden max-w-md w-full glass-panel rounded-3xl p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-3">
-                <h2 class="text-xl font-bold text-amber-300 font-mali">🙏 ขอขมาพระแม่คงคาและอธิษฐาน</h2>
-                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70">✕</button>
+        <div id="modalWish" class="hidden max-w-sm w-full max-h-[86vh] overflow-y-auto glass-panel rounded-3xl p-5 shadow-2xl">
+            <div class="flex justify-between items-start gap-2 mb-2.5">
+                <h2 class="text-lg font-bold text-amber-300 font-mali">🙏 ขอขมาพระแม่คงคาและอธิษฐาน</h2>
+                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/80 shrink-0">✕</button>
             </div>
-            <p class="text-xs text-amber-100/90 mb-3">
-                พิมกำลังถือ <span id="wishKrathongName" class="text-pink-300 font-semibold">กระทง</span> อยู่ข้างๆ เป๊ปซี่ พิมพ์คำอธิษฐานของพิมได้เลยนะ:
+            <p class="text-xs text-amber-100/90 mb-2.5 leading-relaxed">
+                พิมกำลังถือ <span id="wishKrathongName" class="text-pink-300 font-semibold">กระทง</span> อยู่ข้างๆ เป๊ปซี่ พิมพ์คำอธิษฐานได้เลยนะ:
             </p>
-            <textarea id="wishInput" rows="3" maxlength="100" placeholder="เช่น ขอขมาพระแม่คงคา และขอให้พิมกับเป๊ปซี่รักกันนานๆ..." class="w-full rounded-2xl bg-white/10 border border-amber-300/40 p-3.5 text-white placeholder-white/40 text-sm focus:outline-none focus:border-amber-300 mb-3"></textarea>
+            <textarea id="wishInput" rows="3" maxlength="100" placeholder="เช่น ขอขมาพระแม่คงคา และขอให้พิมกับเป๊ปซี่รักกันนานๆ..." class="w-full rounded-2xl bg-white/10 border border-amber-300/40 p-3 text-white placeholder-white/40 text-xs focus:outline-none focus:border-amber-300 mb-2.5"></textarea>
             <div class="flex flex-wrap gap-1.5 mb-4">
                 <button onclick="fillSampleWish('ขอให้พิมกับเป๊ปซี่รักกันนานๆ มีความสุขไปด้วยกันทุกปี ❤️')" class="text-[11px] bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-full text-amber-200">+ รักกันนานๆ</button>
                 <button onclick="fillSampleWish('ขอขมาพระแม่คงคา และขอให้สิ่งไม่ดีลอยไปกับสายน้ำ ✨')" class="text-[11px] bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-full text-amber-200">+ ขอขมาพระแม่คงคา</button>
             </div>
-            <button onclick="confirmFloatKrathong()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-bold shadow-lg active:scale-95 transition">
+            <button onclick="confirmFloatKrathong()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-rose-500 to-amber-500 text-white font-bold text-sm shadow-lg active:scale-95 transition">
                 ยกมือไหว้และลอยกระทงกับเป๊ปซี่ 🪷🙏
             </button>
         </div>
 
         <!-- 9. เซอร์ไพรส์คำอธิษฐานจากเป๊ปซี่ -->
-        <div id="modalPepsiSurprise" class="hidden max-w-md w-full glass-panel-romantic rounded-3xl p-6 shadow-2xl text-center relative overflow-hidden">
-            <div class="text-5xl mb-3 animate-bounce">💌❤️</div>
-            <div class="inline-block px-3 py-1 rounded-full bg-rose-500/30 border border-rose-400/50 text-rose-200 text-xs font-semibold mb-2">
+        <div id="modalPepsiSurprise" class="hidden max-w-sm w-full max-h-[86vh] overflow-y-auto glass-panel-romantic rounded-3xl p-5 shadow-2xl text-center relative">
+            <div class="text-4xl mb-2 animate-bounce">💌❤️</div>
+            <div class="inline-block px-3 py-1 rounded-full bg-rose-500/30 border border-rose-400/50 text-rose-200 text-[11px] font-semibold mb-2">
                 คำอธิษฐานจากเป๊ปซี่ถึงพิม
             </div>
-            <h3 class="text-xl font-bold text-amber-300 font-mali mb-3">สุขสันต์วันลอยกระทงนะพิม!</h3>
-            <div class="bg-white/10 rounded-2xl p-4 border border-amber-300/30 mb-5 text-left relative">
-                <p id="pepsiWishText" class="text-white text-sm sm:text-base leading-relaxed font-mali">
+            <h3 class="text-lg font-bold text-amber-300 font-mali mb-2.5">สุขสันต์วันลอยกระทงนะพิม!</h3>
+            <div class="bg-white/10 rounded-2xl p-3.5 border border-amber-300/30 mb-4 text-left">
+                <p id="pepsiWishText" class="text-white text-xs leading-relaxed font-mali">
                     "สุขสันต์วันลอยกระทงนะพิม ขอบคุณที่อยู่ข้างๆ กันมาตลอด ขอให้เราสองคนรักกันและอยู่ด้วยกันไปนานๆ แบบนี้ทุกปีเลยนะ รักพิมที่สุดครับ ❤️"
                 </p>
-                <div class="mt-3 pt-3 border-t border-white/15 text-xs text-amber-200">
+                <div class="mt-2.5 pt-2.5 border-t border-white/15 text-[11px] text-amber-200">
                     <span class="font-semibold">คำอธิษฐานของพิม:</span> <span id="pimSavedWishDisplay" class="italic text-pink-200"></span>
                 </div>
             </div>
-            <button onclick="closeSurpriseAndCelebrate()" class="w-full py-3.5 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white font-bold shadow-xl active:scale-95 transition btn-glow">
+            <button onclick="closeSurpriseAndCelebrate()" class="w-full py-3 rounded-2xl bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white font-bold text-sm shadow-xl active:scale-95 transition btn-glow">
                 ขอบคุณนะเป๊ปซี่ ❤️ (ชมพลุฉลอง)
             </button>
         </div>
 
-        <!-- 9.5 จุดทิ้งขยะแยกประเภท (เขียว เหลือง น้ำเงิน แดง) สำหรับทิ้งของในกระเป๋า -->
-        <div id="modalTrashBin" class="hidden max-w-md w-full glass-panel rounded-3xl p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-3">
+        <!-- 9.5 จุดทิ้งขยะแยกประเภท (เขียว เหลือง น้ำเงิน แดง) -->
+        <div id="modalTrashBin" class="hidden max-w-sm w-full max-h-[86vh] overflow-y-auto glass-panel rounded-3xl p-5 shadow-2xl">
+            <div class="flex justify-between items-start gap-2 mb-3">
                 <div>
-                    <h2 class="text-xl font-bold text-amber-300 font-mali">🗑️ จุดทิ้งขยะแยกประเภท</h2>
-                    <p class="text-xs text-amber-100/80">เลือกของในกระเป๋า 5 ช่องที่ต้องการทิ้งลงถังขยะ 4 สี</p>
+                    <h2 class="text-lg font-bold text-amber-300 font-mali">🗑️ จุดทิ้งขยะแยก 4 สี</h2>
+                    <p class="text-[11px] text-amber-100/80">เลือกของในกระเป๋า 5 ช่องที่ต้องการทิ้งลงถังขยะ</p>
                 </div>
-                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:text-white">✕</button>
+                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/80 shrink-0">✕</button>
             </div>
 
-            <!-- แสดงภาพถังขยะ 4 สี (เขียว เหลือง น้ำเงิน แดง) -->
-            <div class="grid grid-cols-4 gap-2 mb-4 bg-white/5 p-3 rounded-2xl border border-white/10 text-center">
+            <div class="grid grid-cols-4 gap-1.5 mb-3.5 bg-white/5 p-2.5 rounded-2xl border border-white/10 text-center">
                 <div class="flex flex-col items-center">
-                    <div class="w-9 h-10 rounded-b-lg rounded-t-sm bg-emerald-500 border-t-4 border-emerald-300 flex items-center justify-center text-xs shadow">🍃</div>
-                    <span class="text-[10px] text-emerald-300 font-semibold mt-1">เขียว (เปียก)</span>
+                    <div class="w-8 h-9 rounded-b-lg rounded-t-sm bg-emerald-500 border-t-4 border-emerald-300 flex items-center justify-center text-xs shadow">🍃</div>
+                    <span class="text-[9px] text-emerald-300 font-semibold mt-1">เขียว (เปียก)</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <div class="w-9 h-10 rounded-b-lg rounded-t-sm bg-amber-400 border-t-4 border-amber-200 flex items-center justify-center text-xs text-slate-900 shadow">♻️</div>
-                    <span class="text-[10px] text-amber-300 font-semibold mt-1">เหลือง (รีไซเคิล)</span>
+                    <div class="w-8 h-9 rounded-b-lg rounded-t-sm bg-amber-400 border-t-4 border-amber-200 flex items-center justify-center text-xs text-slate-900 shadow">♻️</div>
+                    <span class="text-[9px] text-amber-300 font-semibold mt-1">เหลือง (รีไซเคิล)</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <div class="w-9 h-10 rounded-b-lg rounded-t-sm bg-sky-500 border-t-4 border-sky-300 flex items-center justify-center text-xs shadow">🛍️</div>
-                    <span class="text-[10px] text-sky-300 font-semibold mt-1">น้ำเงิน (ทั่วไป)</span>
+                    <div class="w-8 h-9 rounded-b-lg rounded-t-sm bg-sky-500 border-t-4 border-sky-300 flex items-center justify-center text-xs shadow">🛍️</div>
+                    <span class="text-[9px] text-sky-300 font-semibold mt-1">น้ำเงิน (ทั่วไป)</span>
                 </div>
                 <div class="flex flex-col items-center">
-                    <div class="w-9 h-10 rounded-b-lg rounded-t-sm bg-rose-500 border-t-4 border-rose-300 flex items-center justify-center text-xs shadow">⚠️</div>
-                    <span class="text-[10px] text-rose-300 font-semibold mt-1">แดง (อันตราย)</span>
+                    <div class="w-8 h-9 rounded-b-lg rounded-t-sm bg-rose-500 border-t-4 border-rose-300 flex items-center justify-center text-xs shadow">⚠️</div>
+                    <span class="text-[9px] text-rose-300 font-semibold mt-1">แดง (อันตราย)</span>
                 </div>
             </div>
 
-            <div id="trashInventoryList" class="space-y-2 max-h-60 overflow-y-auto pr-1"></div>
+            <div id="trashInventoryList" class="space-y-2 max-h-56 overflow-y-auto pr-1"></div>
         </div>
 
-        <!-- 9.8 เวทีประกวดนางนพมาศ & เครื่องเสียงดนตรี (3 เพลงจากโฟลเดอร์ sounds/) -->
-        <div id="modalMusicPlayer" class="hidden max-w-md w-full glass-panel rounded-3xl p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-3">
+        <!-- 9.8 เลือกเพลงพื้นหลัง & ระดับเสียง -->
+        <div id="modalMusicPlayer" class="hidden max-w-sm w-full max-h-[86vh] overflow-y-auto glass-panel rounded-3xl p-5 shadow-2xl">
+            <div class="flex justify-between items-start gap-2 mb-3">
                 <div>
-                    <h2 class="text-xl font-bold text-amber-300 font-mali">🎶 เลือกเพลงพื้นหลัง & ระดับเสียง</h2>
-                    <p class="text-xs text-amber-100/80">เลือกเปลี่ยนเพลงเพราะๆ ที่เป๊ปซี่เตรียมไว้ให้พิม (3 เพลง)</p>
+                    <h2 class="text-lg font-bold text-amber-300 font-mali">🎵 เพลงพื้นหลัง & ระดับเสียง</h2>
+                    <p class="text-[11px] text-amber-100/80">เลือกเพลงเพราะๆ ที่เป๊ปซี่เตรียมไว้ให้พิม (3 เพลง)</p>
                 </div>
-                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70 hover:text-white">✕</button>
+                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/80 shrink-0">✕</button>
             </div>
 
-            <!-- แถบควบคุมเพิ่มเสียง / ลดเสียง / เปิด-ปิดเสียง -->
-            <div class="bg-white/10 rounded-2xl p-3.5 mb-4 border border-amber-300/30">
+            <div class="bg-white/10 rounded-2xl p-3 mb-3.5 border border-amber-300/30">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-semibold text-amber-200 flex items-center gap-1.5">
                         <span id="modalAudioStatusIcon">🔊</span>
-                        <span>ระดับเสียงเพลงพื้นหลัง: <b id="volumePercentText" class="text-white">70%</b></span>
+                        <span>เสียงเพลง: <b id="volumePercentText" class="text-white">70%</b></span>
                     </span>
                     <button id="btnToggleMute" onclick="toggleAudio()" class="px-2.5 py-1 rounded-lg bg-amber-500/30 hover:bg-amber-500/50 border border-amber-300/50 text-[11px] text-amber-100 font-semibold transition">
                         ปิดเสียงชั่วคราว
                     </button>
                 </div>
-                <div class="flex items-center gap-2.5">
+                <div class="flex items-center gap-2">
                     <button onclick="stepVolume(-0.1)" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-sm font-bold active:scale-95">🔉</button>
                     <input id="volumeSlider" type="range" min="0" max="100" value="70" oninput="setMusicVolume(this.value / 100)" class="w-full accent-amber-400 cursor-pointer h-2 bg-white/20 rounded-lg">
                     <button onclick="stepVolume(0.1)" class="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 flex items-center justify-center text-sm font-bold active:scale-95">🔊</button>
                 </div>
             </div>
 
-            <!-- รายการเพลง 3 เพลง -->
             <div class="text-xs text-amber-300 font-semibold mb-2">เลือกเพลงที่ต้องการเปิดคลอในงาน:</div>
-            <div id="songListContainer" class="space-y-2.5"></div>
+            <div id="songListContainer" class="space-y-2"></div>
         </div>
 
         <!-- 10. บันทึกความทรงจำ -->
-        <div id="modalMemories" class="hidden max-w-md w-full glass-panel rounded-3xl p-6 shadow-2xl">
-            <div class="flex justify-between items-center mb-4">
-                <h2 class="text-lg font-bold text-amber-300 font-mali">💖 บันทึกคำอธิษฐานและการทำบุญของเรา</h2>
-                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/70">✕</button>
+        <div id="modalMemories" class="hidden max-w-sm w-full max-h-[86vh] overflow-y-auto glass-panel rounded-3xl p-5 shadow-2xl">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-base font-bold text-amber-300 font-mali">💖 บันทึกคำอธิษฐานและการทำบุญ</h2>
+                <button onclick="closeAllModals()" class="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white/80 shrink-0">✕</button>
             </div>
-            <div id="memoriesList" class="space-y-3 max-h-64 overflow-y-auto pr-1 text-sm">
+            <div id="memoriesList" class="space-y-2.5 max-h-64 overflow-y-auto pr-1 text-xs">
                 <div class="text-center text-white/60 py-6">ยังไม่ได้ลอยกระทงเลย ลองแวะร้านขายกระทงแล้วไปที่ท่าน้ำดูสิ!</div>
             </div>
-        </div>
-    </div>
-
-    <!-- แบนเนอร์แจ้งเตือน -->
-    <div id="toastBanner" class="fixed top-20 left-1/2 transform -translate-x-1/2 z-30 pointer-events-none transition-all duration-300 opacity-0 -translate-y-4">
-        <div class="glass-panel px-5 py-2.5 rounded-full shadow-xl border border-amber-300/50 flex items-center gap-2 text-sm text-amber-100 whitespace-nowrap">
-            <span id="toastIcon">✨</span>
-            <span id="toastText">ข้อความ</span>
         </div>
     </div>
 

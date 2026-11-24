@@ -7,7 +7,7 @@
     --gold-primary: #fde047;
     --gold-accent: #f59e0b;
     --rose-love: #fb7185;
-    --glass-bg: rgba(16, 20, 46, 0.86);
+    --glass-bg: rgba(16, 20, 46, 0.88);
 }
 
 * {
@@ -92,9 +92,9 @@ canvas {
 }
 
 .inv-slot-active {
-    background: rgba(251, 191, 36, 0.25) !important;
+    background: linear-gradient(180deg, rgba(253, 224, 71, 0.3) 0%, rgba(251, 113, 133, 0.2) 100%) !important;
     border: 2px solid #fde047 !important;
-    box-shadow: 0 0 12px rgba(253, 224, 71, 0.55);
+    box-shadow: 0 0 14px rgba(253, 224, 71, 0.55), inset 0 0 8px rgba(253, 224, 71, 0.2);
     transform: translateY(-2px);
 }
 
@@ -105,17 +105,16 @@ canvas {
 }
 
 .btn-wai-fancy {
-    background: linear-gradient(135deg, rgba(49, 24, 78, 0.92) 0%, rgba(88, 28, 86, 0.9) 55%, rgba(120, 53, 15, 0.92) 100%);
+    background: linear-gradient(135deg, rgba(49, 24, 78, 0.94) 0%, rgba(88, 28, 86, 0.92) 55%, rgba(120, 53, 15, 0.94) 100%);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border: 1.5px solid rgba(253, 224, 71, 0.75);
+    border: 1.5px solid rgba(253, 224, 71, 0.78);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 0 16px rgba(251, 191, 36, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.25);
 }
 
 .btn-wai-fancy:hover {
     border-color: #fef08a;
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.5), 0 0 22px rgba(251, 113, 133, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.35);
-    transform: translateY(-1px);
 }
 
 .wai-shimmer {
@@ -124,97 +123,7 @@ canvas {
     left: 0;
     width: 45%;
     height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 250, 220, 0.28), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 250, 220, 0.3), transparent);
     animation: waiShimmerSweep 3.8s infinite ease-in-out;
     pointer-events: none;
-}
-
-/* =========================================================
-   จัดระเบียบปุ่มบนหน้าจอมือถือแนวตั้ง (Portrait) ไม่ให้ซ้อนทับกัน
-   ========================================================= */
-@media (max-width: 640px) and (orientation: portrait) {
-    /* 1. แถบช่องเก็บของ 5 ช่อง อยู่ชั้นกลางเหนือจอยสติ๊กและปุ่มเดิน */
-    #inventoryWrapper {
-        bottom: 112px !important;
-        left: 50% !important;
-        transform: translateX(-50%) !important;
-        width: max-content !important;
-        z-index: 25 !important;
-    }
-
-    /* 2. จอยสติ๊กอยู่ชิดมุมซ้ายล่าง */
-    #joystickZone {
-        width: 96px !important;
-        height: 96px !important;
-    }
-
-    /* 3. ปุ่มยกมือไหว้คู่กัน + ปุ่มปล่อยโคมลอย ยกขึ้นเหนือแถบช่องเก็บของ */
-    #btnWai,
-    #btnReleaseLantern {
-        position: fixed !important;
-        right: 12px !important;
-        z-index: 25 !important;
-    }
-
-    #btnWai {
-        bottom: 178px !important;
-    }
-
-    #btnReleaseLantern {
-        bottom: 236px !important;
-    }
-
-    /* 4. ปุ่มโต้ตอบหลัก (เดินเที่ยวงาน) อยู่มุมขวาล่าง คู่กับจอยสติ๊กซ้ายล่าง */
-    #btnInteract {
-        max-width: calc(100vw - 128px) !important;
-        padding: 10px 12px !important;
-    }
-}
-
-/* =========================================================
-   จัดระเบียบปุ่มบนหน้าจอมือถือแนวนอน (Landscape) ไม่ให้ทับช่องเก็บของ
-   ========================================================= */
-@media (max-height: 520px) and (orientation: landscape) {
-    /* 1. แถบช่องเก็บของ 5 ช่อง วางชิดขอบล่างตรงกลาง กะทัดรัดไม่ชนซ้ายขวา */
-    #inventoryWrapper {
-        bottom: 10px !important;
-        left: 44% !important;
-        transform: translateX(-50%) scale(0.86) !important;
-        transform-origin: bottom center !important;
-        z-index: 25 !important;
-    }
-
-    /* 2. จอยสติ๊กมุมซ้ายล่าง */
-    #joystickZone {
-        width: 96px !important;
-        height: 96px !important;
-    }
-
-    #joystickZone span {
-        display: none !important;
-    }
-
-    /* 3. จำกัดความกว้างปุ่มโต้ตอบหลักฝั่งขวาไม่ให้ยื่นไปทับช่องที่ 4-5 */
-    #btnInteract {
-        max-width: 225px !important;
-        padding: 10px 14px !important;
-        border-radius: 20px !important;
-    }
-
-    #interactTitle {
-        font-size: 13px !important;
-    }
-
-    #interactSub {
-        font-size: 10px !important;
-    }
-
-    #btnWai {
-        padding: 7px 12px !important;
-    }
-
-    #btnReleaseLantern {
-        padding: 7px 12px !important;
-        font-size: 12px !important;
-    }
 }

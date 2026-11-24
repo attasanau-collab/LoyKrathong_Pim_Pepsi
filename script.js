@@ -57,20 +57,20 @@ const camera = { x: 650, y: 300, zoom: 1 };
 function computeOptimalCameraZoom() {
     const w = window.innerWidth;
     const h = window.innerHeight;
-    // มือถือแนวตั้ง (จอแคบ): ซูมออกให้เห็นร้านค้า 2-3 ร้านพร้อมลานเดินและริมน้ำในเฟรมเดียว
+    // มือถือแนวตั้ง: ซูมเข้ากำลังดีให้อ่านป้ายชื่อร้านและข้อความพูดคุยบนหัวตัวละครได้ชัดเจน
     if (w < 640 && h > w) {
-        return Math.max(0.58, Math.min(0.72, w / 620));
+        return Math.max(0.76, Math.min(0.90, w / 465));
     }
-    // มือถือแนวนอน (จอเตี้ย): ซูมออกให้เห็นทั้งซุ้มร้านค้า ลานเดิน และริมแม่น้ำครบในหน้าจอเดียว
+    // มือถือแนวนอน
     if (h < 540 && w > h) {
-        return Math.max(0.62, Math.min(0.76, h / 540));
+        return Math.max(0.74, Math.min(0.86, h / 460));
     }
     // แท็บเล็ตขนาดกลาง
     if (w < 1024) {
-        return 0.85;
+        return 0.92;
     }
     // คอมพิวเตอร์ / จอใหญ่
-    return 1.0;
+    return 1.05;
 }
 
 // สถานะการนั่งเครื่องเล่นของพิมและเป๊ปซี่
@@ -160,7 +160,7 @@ const stalls = [
     },
     {
         id: 'animalshop',
-        name: 'ร้านขายสัตว์ทำบุญปล่อยชีวิต',
+        name: 'ร้านปล่อยสัตว์ทำบุญ',
         sub: 'เลือกซื้อนก ปลา หนู เต่า ไปปล่อยทำบุญ',
         icon: '🐟',
         x: 500,
@@ -184,8 +184,8 @@ const stalls = [
     },
     {
         id: 'lanternshop',
-        name: 'ร้านขายโคมไฟและโคมลอย',
-        sub: 'เลือกโคมไฟแล้วปล่อยขึ้นฟ้าจากจุดที่ยืนได้เลย',
+        name: 'ร้านโคมไฟและโคมลอย',
+        sub: 'ซื้อโคมแล้วกดปล่อยขึ้นฟ้าได้เลย',
         icon: '🏮',
         x: 1100,
         y: 360,
@@ -196,7 +196,7 @@ const stalls = [
     },
     {
         id: 'streetfood',
-        name: 'ร้านสตรีทฟู้ดและของกินเล่น',
+        name: 'ร้านสตรีทฟู้ดของกินเล่น',
         sub: 'ลูกชิ้นปิ้ง ไก่ทอด ข้าวโพด หมึกย่าง',
         icon: '🍢',
         x: 1400,
@@ -220,7 +220,7 @@ const stalls = [
     },
     {
         id: 'souvenir',
-        name: 'ร้านของใช้ ของเล่น และสินค้าทั่วไป',
+        name: 'ร้านของฝากและของเล่น',
         sub: 'สินค้าแฮนด์เมด เครื่องประดับ ของเล่น',
         icon: '🧸',
         x: 2000,
@@ -232,8 +232,8 @@ const stalls = [
     },
     {
         id: 'stage',
-        name: 'เวทีประกวดนางนพมาศ & มินิคอนเสิร์ต',
-        sub: 'กดร่วมสนุกชมการประกวดนางนพมาศคู่กับเป๊ปซี่',
+        name: 'เวทีนางนพมาศ & คอนเสิร์ต',
+        sub: 'กดชมประกวดนางนพมาศคู่กัน',
         icon: '🎤',
         x: 2330,
         y: 360,
@@ -282,8 +282,8 @@ const stalls = [
     // โซนริมแม่น้ำด้านล่าง
     {
         id: 'trashbin',
-        name: 'จุดทิ้งขยะ 4 สี (เขียว เหลือง น้ำเงิน แดง)',
-        sub: 'กดเพื่อทิ้งของในกระเป๋าแยกตามประเภท',
+        name: 'จุดทิ้งขยะแยก 4 สี',
+        sub: 'กดทิ้งของในกระเป๋า 5 ช่อง',
         icon: '🗑️',
         x: 560,
         y: 810,
@@ -306,8 +306,8 @@ const stalls = [
     },
     {
         id: 'releasespot',
-        name: 'จุดปล่อยปลาและปล่อยสัตว์ทำบุญ',
-        sub: 'นำสัตว์ที่ซื้อจากร้านมาปล่อยทำบุญตรงนี้',
+        name: 'จุดปล่อยปลาและสัตว์ทำบุญ',
+        sub: 'นำสัตว์ที่ซื้อมาปล่อยทำบุญตรงนี้',
         icon: '🐟',
         x: 1650,
         y: 805,
@@ -376,7 +376,7 @@ function pickLanternItem(name, bodyColor, glowColor, icon) {
     pim.chatTimer = 4.5;
     pepsi.chatText = `โคมสวยมากพิม กดปุ่ม "ปล่อยโคมลอยตรงนี้เลย" เมื่อไหร่ก็ได้ครับ ❤️`;
     pepsi.chatTimer = 5.5;
-    showToast(`รับ${name}มาแล้ว! กดปุ่มสีส้มขวาล่างเพื่อปล่อยโคมจากตรงที่ยืนได้เลย`, icon);
+    showToast(`รับ${name}แล้ว! กดปุ่มสีส้มด้านล่างเพื่อปล่อยขึ้นฟ้าได้เลย`, icon);
 }
 
 function releaseSkyLantern() {
@@ -564,9 +564,8 @@ function triggerCoupleWai() {
 }
 
 // =========================================================
-// ระบบบังคับตัวละคร (จอยสติ๊ก / แตะพื้น / คีย์บอร์ด)
+// ระบบบังคับตัวละคร (จิ้มบนพื้นเพื่อเดินอย่างเดียว)
 // =========================================================
-const joystick = { active: false, dx: 0, dy: 0, originX: 0, originY: 0, maxRadius: 42 };
 const keys = {};
 let activeInteractTarget = null;
 
@@ -582,51 +581,6 @@ window.addEventListener('keydown', (e) => {
     }
 });
 window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
-
-const joystickZone = document.getElementById('joystickZone');
-const joystickKnob = document.getElementById('joystickKnob');
-
-joystickZone.addEventListener('touchstart', (e) => {
-    e.preventDefault();
-    if (rideState.active) return;
-    const touch = e.changedTouches[0];
-    const rect = joystickZone.getBoundingClientRect();
-    joystick.active = true;
-    joystick.originX = rect.left + rect.width / 2;
-    joystick.originY = rect.top + rect.height / 2;
-    pim.targetX = null;
-    pim.targetY = null;
-    updateJoystick(touch.clientX, touch.clientY);
-}, { passive: false });
-
-joystickZone.addEventListener('touchmove', (e) => {
-    e.preventDefault();
-    if (!joystick.active) return;
-    const touch = e.changedTouches[0];
-    updateJoystick(touch.clientX, touch.clientY);
-}, { passive: false });
-
-const endJoystick = () => {
-    joystick.active = false;
-    joystick.dx = 0;
-    joystick.dy = 0;
-    joystickKnob.style.transform = `translate(0px, 0px)`;
-};
-joystickZone.addEventListener('touchend', endJoystick);
-joystickZone.addEventListener('touchcancel', endJoystick);
-
-function updateJoystick(clientX, clientY) {
-    let diffX = clientX - joystick.originX;
-    let diffY = clientY - joystick.originY;
-    const dist = Math.hypot(diffX, diffY);
-    if (dist > joystick.maxRadius) {
-        diffX = (diffX / dist) * joystick.maxRadius;
-        diffY = (diffY / dist) * joystick.maxRadius;
-    }
-    joystickKnob.style.transform = `translate(${diffX}px, ${diffY}px)`;
-    joystick.dx = diffX / joystick.maxRadius;
-    joystick.dy = diffY / joystick.maxRadius;
-}
 
 canvas.addEventListener('pointerdown', (e) => {
     if (!gameStarted || isAnyModalOpen() || rideState.active) return;
@@ -985,13 +939,12 @@ function drawDetailedKrathongShape(targetCtx, x, y, baseType, decoType, scale, t
 function startGame() {
     document.getElementById('startScreen').classList.add('hidden');
     document.getElementById('topHud').classList.remove('hidden');
-    document.getElementById('touchControls').classList.remove('hidden');
-    document.getElementById('inventoryWrapper').classList.remove('hidden');
+    document.getElementById('bottomHudContainer').classList.remove('hidden');
     updateHeldItemUI();
     gameStarted = true;
     initAudio();
     playSuccessChime();
-    showToast('ยินดีต้อนรับพิม! เป๊ปซี่เดินตามอยู่นะ ❤️', '🪷');
+    showToast('จิ้มบนพื้นเพื่อเดินเที่ยวงานกับเป๊ปซี่ได้เลย ❤️', '👆');
 }
 
 function selectInventorySlot(index) {
@@ -1121,7 +1074,7 @@ function handleInteract() {
         if (pim.heldItem && pim.heldItem.kind === 'animal') {
             releaseBoughtAnimal();
         } else {
-            pepsi.chatText = 'เรายังไม่ได้ซื้อปลากับสัตว์ที่ร้านเลยพิม ไปเลือกที่ "ร้านขายสัตว์ทำบุญปล่อยชีวิต" ก่อนนะ 🕊️🐟';
+            pepsi.chatText = 'แวะเลือกซื้อนก ปลา เต่า ที่ "ร้านปล่อยสัตว์ทำบุญ" ก่อนนะพิม 🕊️🐟';
             pepsi.chatTimer = 5.5;
             showToast('แวะเลือกซื้อนก ปลา หนู หรือเต่าที่ร้านขายสัตว์ทำบุญก่อนนะ!', '🕊️');
         }
@@ -1528,19 +1481,14 @@ function update(dt) {
             showToast('ลงจากเครื่องเล่นเรียบร้อย สนุกสุดๆ เลย ❤️', '✨');
         }
     } else {
-        // 2. การเดินปกติของพิม
+        // 2. การเดินปกติของพิม (จิ้มพื้นเพื่อเดินเป็นหลัก)
         let moveX = 0;
         let moveY = 0;
 
-        if (joystick.active) {
-            moveX = joystick.dx;
-            moveY = joystick.dy;
-        } else {
-            if (keys['arrowleft'] || keys['a']) moveX -= 1;
-            if (keys['arrowright'] || keys['d']) moveX += 1;
-            if (keys['arrowup'] || keys['w']) moveY -= 1;
-            if (keys['arrowdown'] || keys['s']) moveY += 1;
-        }
+        if (keys['arrowleft'] || keys['a']) moveX -= 1;
+        if (keys['arrowright'] || keys['d']) moveX += 1;
+        if (keys['arrowup'] || keys['w']) moveY -= 1;
+        if (keys['arrowdown'] || keys['s']) moveY += 1;
 
         if (moveX !== 0 || moveY !== 0) {
             const len = Math.hypot(moveX, moveY);
@@ -1688,7 +1636,7 @@ function update(dt) {
     const maxCamX = Math.max(0, WORLD_WIDTH - viewW);
     const maxCamY = Math.max(0, WORLD_HEIGHT - viewH);
     const targetCamX = Math.max(0, Math.min(maxCamX, midX - viewW / 2));
-    const targetCamY = Math.max(0, Math.min(maxCamY, midY - viewH * 0.54));
+    const targetCamY = Math.max(0, Math.min(maxCamY, midY - viewH * 0.46));
     camera.x += (targetCamX - camera.x) * Math.min(1, dt * 5);
     camera.y += (targetCamY - camera.y) * Math.min(1, dt * 5);
 }
@@ -1726,7 +1674,7 @@ function updateInteractButton(target) {
                 title.textContent = `ปล่อย${pim.heldItem.name} 🙏`;
                 sub.textContent = 'กดเพื่อยกมือไหว้และปล่อยทำบุญร่วมกัน';
             } else {
-                title.textContent = 'จุดปล่อยปลาและปล่อยสัตว์ทำบุญ';
+                title.textContent = 'จุดปล่อยปลาและสัตว์ทำบุญ';
                 sub.textContent = 'แวะร้านขายสัตว์ทำบุญปล่อยชีวิตก่อนนะ';
             }
         } else {
@@ -1736,8 +1684,8 @@ function updateInteractButton(target) {
     } else {
         btn.classList.add('opacity-40', 'pointer-events-none');
         btn.classList.remove('btn-glow');
-        icon.textContent = '✨';
-        title.textContent = 'เดินเที่ยวงาน';
+        icon.textContent = '👆';
+        title.textContent = 'แตะพื้นเพื่อเดิน';
         sub.textContent = 'เดินไปใกล้ร้านค้าหรือท่าน้ำ';
     }
 }
@@ -2156,18 +2104,18 @@ function drawStall(stall, isHighlighted) {
     ctx.textAlign = 'center';
     ctx.fillText(stall.icon, 0, 2);
 
-    ctx.font = 'bold 11px Prompt, sans-serif';
-    const tagW = Math.max(150, ctx.measureText(stall.name).width + 24);
-    ctx.fillStyle = 'rgba(15, 20, 45, 0.9)';
+    ctx.font = 'bold 11.5px Prompt, sans-serif';
+    const tagW = Math.max(132, ctx.measureText(stall.name).width + 22);
+    ctx.fillStyle = isHighlighted ? 'rgba(49, 24, 78, 0.95)' : 'rgba(15, 20, 45, 0.92)';
     ctx.beginPath();
-    ctx.roundRect(-tagW / 2, -82, tagW, 25, 12);
+    ctx.roundRect(-tagW / 2, -84, tagW, 26, 13);
     ctx.fill();
-    ctx.strokeStyle = isHighlighted ? '#fde047' : 'rgba(253, 224, 71, 0.45)';
-    ctx.lineWidth = 1.5;
+    ctx.strokeStyle = isHighlighted ? '#fde047' : 'rgba(253, 224, 71, 0.5)';
+    ctx.lineWidth = isHighlighted ? 2 : 1.3;
     ctx.stroke();
 
-    ctx.fillStyle = '#fef08a';
-    ctx.fillText(stall.name, 0, -65);
+    ctx.fillStyle = isHighlighted ? '#ffffff' : '#fef08a';
+    ctx.fillText(stall.name, 0, -67);
 
     ctx.restore();
 }
@@ -2610,18 +2558,55 @@ function drawNameTag(name, accentColor, yOffset) {
 
 function drawSpeechBubble(text, yOffset, bgColor, textColor) {
     ctx.save();
-    ctx.font = '500 12px Mali, sans-serif';
-    const maxW = 215;
-    const textW = Math.min(maxW, ctx.measureText(text).width + 22);
+    ctx.font = '600 12px Mali, sans-serif';
+    const maxBubbleW = 196;
+    const padX = 12;
+    const maxLineW = maxBubbleW - padX * 2;
+
+    // ตัดแบ่งข้อความภาษาไทยเป็น 1-2 บรรทัดอัตโนมัติ ไม่โดนตัดคำ ...
+    const lines = [];
+    let currentLine = '';
+    for (const ch of Array.from(text)) {
+        const testLine = currentLine + ch;
+        if (ctx.measureText(testLine).width > maxLineW && currentLine.length > 0) {
+            lines.push(currentLine);
+            currentLine = ch;
+            if (lines.length === 2) break;
+        } else {
+            currentLine = testLine;
+        }
+    }
+    if (lines.length < 2 && currentLine) {
+        lines.push(currentLine);
+    }
+
+    const lineHeight = 16;
+    const longestW = Math.max(...lines.map(l => ctx.measureText(l).width));
+    const boxW = Math.min(maxBubbleW, Math.max(72, longestW + padX * 2));
+    const boxH = lines.length * lineHeight + 12;
+    const topY = yOffset - boxH + 4;
+
     ctx.fillStyle = bgColor;
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.28)';
+    ctx.shadowBlur = 8;
     ctx.beginPath();
-    ctx.roundRect(-textW / 2, yOffset - 22, textW, 26, 12);
+    ctx.roundRect(-boxW / 2, topY, boxW, boxH, 12);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // หางกล่องข้อความชี้ลงที่ตัวละคร
+    ctx.beginPath();
+    ctx.moveTo(-5, topY + boxH);
+    ctx.lineTo(5, topY + boxH);
+    ctx.lineTo(0, topY + boxH + 5);
+    ctx.closePath();
     ctx.fill();
 
     ctx.fillStyle = textColor;
     ctx.textAlign = 'center';
-    const display = text.length > 35 ? text.slice(0, 34) + '...' : text;
-    ctx.fillText(display, 0, yOffset - 5);
+    lines.forEach((line, idx) => {
+        ctx.fillText(line, 0, topY + 17 + idx * lineHeight);
+    });
     ctx.restore();
 }
 
