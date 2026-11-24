@@ -170,3 +170,51 @@ canvas {
         padding: 10px 12px !important;
     }
 }
+
+/* =========================================================
+   จัดระเบียบปุ่มบนหน้าจอมือถือแนวนอน (Landscape) ไม่ให้ทับช่องเก็บของ
+   ========================================================= */
+@media (max-height: 520px) and (orientation: landscape) {
+    /* 1. แถบช่องเก็บของ 5 ช่อง วางชิดขอบล่างตรงกลาง กะทัดรัดไม่ชนซ้ายขวา */
+    #inventoryWrapper {
+        bottom: 10px !important;
+        left: 44% !important;
+        transform: translateX(-50%) scale(0.86) !important;
+        transform-origin: bottom center !important;
+        z-index: 25 !important;
+    }
+
+    /* 2. จอยสติ๊กมุมซ้ายล่าง */
+    #joystickZone {
+        width: 96px !important;
+        height: 96px !important;
+    }
+
+    #joystickZone span {
+        display: none !important;
+    }
+
+    /* 3. จำกัดความกว้างปุ่มโต้ตอบหลักฝั่งขวาไม่ให้ยื่นไปทับช่องที่ 4-5 */
+    #btnInteract {
+        max-width: 225px !important;
+        padding: 10px 14px !important;
+        border-radius: 20px !important;
+    }
+
+    #interactTitle {
+        font-size: 13px !important;
+    }
+
+    #interactSub {
+        font-size: 10px !important;
+    }
+
+    #btnWai {
+        padding: 7px 12px !important;
+    }
+
+    #btnReleaseLantern {
+        padding: 7px 12px !important;
+        font-size: 12px !important;
+    }
+}

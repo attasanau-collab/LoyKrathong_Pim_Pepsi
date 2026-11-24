@@ -52,7 +52,26 @@ const bgAudioPlayer = new Audio();
 bgAudioPlayer.loop = true;
 let usingHtml5Audio = false;
 
-const camera = { x: 650, y: 300 };
+const camera = { x: 650, y: 300, zoom: 1 };
+
+function computeOptimalCameraZoom() {
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    // มือถือแนวตั้ง (จอแคบ): ซูมออกให้เห็นร้านค้า 2-3 ร้านพร้อมลานเดินและริมน้ำในเฟรมเดียว
+    if (w < 640 && h > w) {
+        return Math.max(0.58, Math.min(0.72, w / 620));
+    }
+    // มือถือแนวนอน (จอเตี้ย): ซูมออกให้เห็นทั้งซุ้มร้านค้า ลานเดิน และริมแม่น้ำครบในหน้าจอเดียว
+    if (h < 540 && w > h) {
+        return Math.max(0.62, Math.min(0.76, h / 540));
+    }
+    // แท็บเล็ตขนาดกลาง
+    if (w < 1024) {
+        return 0.85;
+    }
+    // คอมพิวเตอร์ / จอใหญ่
+    return 1.0;
+}
 
 // สถานะการนั่งเครื่องเล่นของพิมและเป๊ปซี่
 const rideState = {
@@ -612,8 +631,9 @@ function updateJoystick(clientX, clientY) {
 canvas.addEventListener('pointerdown', (e) => {
     if (!gameStarted || isAnyModalOpen() || rideState.active) return;
     const rect = canvas.getBoundingClientRect();
-    const worldX = (e.clientX - rect.left) + camera.x;
-    const worldY = (e.clientY - rect.top) + camera.y;
+    const z = camera.zoom || 1;
+    const worldX = (e.clientX - rect.left) / z + camera.x;
+    const worldY = (e.clientY - rect.top) / z + camera.y;
     pim.targetX = Math.max(80, Math.min(WORLD_WIDTH - 80, worldX));
     pim.targetY = Math.max(PROMENADE_TOP + 60, Math.min(RIVER_Y - 12, worldY));
     spawnHeart(pim.targetX, pim.targetY, '#fde047');
@@ -1429,7 +1449,8 @@ function spawnFirework(x, y) {
 function triggerCelebrationFireworks() {
     for (let i = 0; i < 5; i++) {
         setTimeout(() => {
-            const fx = camera.x + canvas.width * (0.2 + Math.random() * 0.6);
+            const viewW = canvas.width / (camera.zoom || 1);
+            const fx = camera.x + viewW * (0.2 + Math.random() * 0.6);
             const fy = 85 + Math.random() * 140;
             spawnFirework(fx, fy);
         }, i * 380);
@@ -1658,11 +1679,16 @@ function update(dt) {
         if (h.alpha <= 0) floatingHearts.splice(i, 1);
     }
 
-    // 6. กล้องติดตามตัวละครพิมและเป๊ปซี่
+    // 6. กล้องติดตามตัวละครพิมและเป๊ปซี่ (รองรับการซูมออกอัตโนมัติบนมือถือ)
+    const z = camera.zoom || 1;
+    const viewW = canvas.width / z;
+    const viewH = canvas.height / z;
     const midX = (pim.x + pepsi.x) / 2;
     const midY = (pim.y + pepsi.y) / 2;
-    const targetCamX = Math.max(0, Math.min(WORLD_WIDTH - canvas.width, midX - canvas.width / 2));
-    const targetCamY = Math.max(0, Math.min(WORLD_HEIGHT - canvas.height, midY - canvas.height * 0.55));
+    const maxCamX = Math.max(0, WORLD_WIDTH - viewW);
+    const maxCamY = Math.max(0, WORLD_HEIGHT - viewH);
+    const targetCamX = Math.max(0, Math.min(maxCamX, midX - viewW / 2));
+    const targetCamY = Math.max(0, Math.min(maxCamY, midY - viewH * 0.54));
     camera.x += (targetCamX - camera.x) * Math.min(1, dt * 5);
     camera.y += (targetCamY - camera.y) * Math.min(1, dt * 5);
 }
@@ -1722,6 +1748,8 @@ function updateInteractButton(target) {
 function draw(time) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.save();
+    const z = camera.zoom || 1;
+    ctx.scale(z, z);
     ctx.translate(-camera.x, -camera.y);
 
     // 1. ท้องฟ้ายามค่ำคืนและดวงดาว
@@ -2603,6 +2631,7 @@ function drawSpeechBubble(text, yOffset, bgColor, textColor) {
 function resizeCanvas() {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
+    camera.zoom = computeOptimalCameraZoom();
 }
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
